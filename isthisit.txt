@@ -1,0 +1,146 @@
+This actually resolves both of your requirements cleanly, and there's already a working implementation to point to. Let me explain the mechanism, since it's genuinely different from anything requiring flight-through-the-regime.
+
+Why this works without ever having been to that speed/altitude
+
+Stock KSP's aero force on ModuleAeroSurface parts is computed from three ingredients, and none of them require the vessel to currently be at that flight condition:
+
+Static per-part data, readable from the live part right now via kOS's generic module introspection — no matter what Mach you're actually at:
+part:getmodule("ModuleAeroSurface"):getfield("deploy angle")
+part:getmodule("ModuleAeroSurface"):getfield("deploy")        // extended/retracted
+
+Combined with deflectionLiftCoeff — a constant tied to the part type, not fitted per-flight (this project hardcodes 0.38 as the common default and keeps a small override table for parts that differ, in ExtraDatabase.ks).
+
+Stock's own Mach/AoA correction curves — these are fixed, universal physics constants baked into the game itself (PhysicsGlobals), identical for every vessel and every installation of KSP. They're not derived from your flight at all; this library extracted them once (visible as the hardcoded keyframe tables in Profile.ks, e.g. getWingAoACurve) because kOS has no live API to query PhysicsGlobals directly — but they never change, so hardcoding them isn't "tuning," it's just using a physics constant.
+The same formula stock KSP itself evaluates, applied symbolically to a hypothetical Mach/AoA rather than your current one:
+cdValue = getWingAoAMultiplier(abs(deflectionAngle))
+force = deflectionLiftCoeff * dynamicPressure * cdValue
+
+Since this is just a curve evaluated at a number you choose, you can plug in the Mach/AoA/dynamic-pressure your predictor is proposing for some future point in the descent — including regimes you haven't reached yet in real flight. That's exactly what you need for forward simulation from boostback all the way to touchdown.
+
+What this means for your two concerns
+Thin-atmosphere boostback: no problem — you're not measuring anything real there, so zero dynamic pressure isn't a data-starvation issue anymore. You just don't need real telemetry to evaluate the curves.
+Simulating regimes not yet visited: this is the whole point of the technique — createProfile.ks in this project literally sweeps a Mach range computationally (from {local i is round(startMach/dT,1)} until i > round(endMach/dT,1)) to build a full profile before any relevant flight happens.
+No per-booster tuning: deflectionLiftCoeff and the Mach/AoA curves are constants shared across all airbrake parts of that type, not fit to your specific vehicle. Swap boosters, and as long as the new one uses the same stock ModuleAeroSurface (or you extend the small override table for a different part), this works identically with no recalibration step.
+Practical path
+
+I'd suggest borrowing the physics/data pieces from CCAT/DragProfile/LIB/Profile.ks and Analysis.ks rather than the whole GUI/database framework — specifically: the part-detection loop (for module in part:modules { if module:tostring:contains("ModuleAeroSurface") ... }), the deploy-angle/state field reads, and the Mach/AoA correction curve functions. Wire that into your predictor as a function you call with a hypothetical (Mach, AoA, dynamic pressure) for each integration step, returning predicted stock-aero force — additive to ADDONS:FAR:AEROFORCEAT, the same shape as before, but now analytically correct instead of empirically fitted.
+
+One thing worth noting from their source: The addon now supports non-active vessels is unrelated, but they do flag a real quirk in their own airbrake deflection-angle math with a comment noting it's a workaround for a known bug in the stock airbrake drag system with an open issue — worth reading that specific code path closely, since it means stock's own airbrake model has a small documented oddity baked in, not something your implementation introduces. 
+GitHub
+
+so you telling me if we get some part data through kos and some game data from somewhere else (which is part dependend so if airbrake is moded we need data from mod?) then we can calculate force for each air brake part at any speed and dynamic pressure? can you give me kos fun that will do that for all the air brake parts on the vessel? what data do i need to give you?
+
+Reconciled accessible runtime data with fallback lookup tables for modded variants
+Reconciled accessible runtime data with fallback lookup tables for modded variants
+
+Reconciled accessible runtime data with fallback lookup tables for modded variants.
+
+Done
+
+Good question, and worth being precise about the data split before I hand you code, since it matters for what's genuinely "zero-tuning" versus what needs a one-time lookup per part type. Let me first check exactly how the reference project computes the velocity-relative deflection term (vdotZ), since I want to give you the real formula, not a guess.
+
+Architected aerodynamic simulation function integrating velocity, pressure, and part geometry
+Architected aerodynamic simulation function integrating velocity, pressure, and part geometry
+
+Good question — worth being precise about which category each piece of data falls into, because they have very different implications for "no per-booster tuning."
+
+The three data categories
+Live, readable from any part right now via kOS — same code works regardless of mod. Deploy angle, deploy/retracted state, and part orientation. No lookup table needed, works for any part carrying ModuleAeroSurface, stock or modded.
+A constant tied to the part type, not the flight — deflectionLiftCoeff. This one's the wrinkle: it's not reliably exposed as a live-gettable field, so it can't always be read through kOS directly. For stock airbrake parts it's a known fixed value (0.38), and that reference project confirms it — same number, works for every vessel using that stock part, zero per-flight tuning. If you fly a modded airbrake, this number lives in that mod's part .cfg (under MODULE { name = ModuleAeroSurface ... deflectionLiftCoeff = X }), so you'd need to open that file once and add it to a small lookup table. This is a one-time-per-part-type lookup, not empirical fitting — same as looking up a spec sheet, not measuring behavior in flight, and it never needs updating per vehicle or per flight.
+Universal stock physics curves (Mach and AoA correction). Same for every part, every vessel, every install of KSP. Not vehicle-specific at all — I'm hardcoding these from the reference project since kOS has no live API to query them.
+The function
+kos
+// ---- Universal stock physics curves (same for every vessel, extracted once) ----
+GLOBAL machCdCurve IS LIST(
+    LIST(0.00, 1.0000, 0.00,       0.00715953),
+    LIST(0.85, 1.2500, 0.7780356,  0.7780356),
+    LIST(1.10, 2.5000, 0.2492796,  0.2492796),
+    LIST(5.00, 3.0000, 0,          0)
+).
+
+GLOBAL wingAoACurve IS LIST(
+    LIST(0.00,       0.0100, 0.00,       0.00),
+    LIST(0.3420201,  0.0600, 0.1750731,  0.1750731),
+    LIST(0.50,       0.2400, 2.60928,    2.60928),
+    LIST(0.7071068,  1.7000, 3.349777,   3.349777),
+    LIST(1.00,       2.4000, 1.387938,   0.00)
+).
+
+// Hermite spline evaluation matching Unity FloatCurve keyframe format (x, value, inTangent, outTangent)
+FUNCTION hermiteInterp {
+    PARAMETER keys, x.
+    IF x <= keys[0][0] { RETURN keys[0][1]. }
+    LOCAL n IS keys:LENGTH.
+    IF x >= keys[n-1][0] { RETURN keys[n-1][1]. }
+    LOCAL i IS 0.
+    UNTIL keys[i+1][0] >= x { SET i TO i+1. }
+    LOCAL k0 IS keys[i]. LOCAL k1 IS keys[i+1].
+    LOCAL dt IS k1[0] - k0[0].
+    LOCAL t IS (x - k0[0]) / dt.
+    LOCAL t2 IS t*t. LOCAL t3 IS t2*t.
+    LOCAL h00 IS 2*t3 - 3*t2 + 1.
+    LOCAL h10 IS t3 - 2*t2 + t.
+    LOCAL h01 IS -2*t3 + 3*t2.
+    LOCAL h11 IS t3 - t2.
+    RETURN h00*k0[1] + h10*dt*k0[2] + h01*k1[1] + h11*dt*k1[3].
+}
+
+FUNCTION getMachMultiplier { PARAMETER mach. RETURN hermiteInterp(machCdCurve, mach). }
+FUNCTION getAoAMultiplier  { PARAMETER absTerm. RETURN hermiteInterp(wingAoACurve, MIN(ABS(absTerm), 1)). }
+
+// ---- Part-type constants: extend this for any modded airbrake you fly ----
+// One-time lookup per part type, from that part's .cfg - NOT flight-fitted.
+GLOBAL airbrakeCoeffOverrides IS LEXICON(
+    "airbrake1", 0.38   // stock Mk2/Mk3 airbrake - add modded part names/values here
+).
+FUNCTION getAirbrakeCoeff {
+    PARAMETER partName.
+    IF airbrakeCoeffOverrides:HASKEY(partName) { RETURN airbrakeCoeffOverrides[partName]. }
+    RETURN 0.38.   // stock-typical fallback if part unknown
+}
+
+// ---- Main function ----
+// simVelocityVec : hypothetical air-relative velocity vector for this predictor step (m/s)
+// simDensity     : atmospheric density at simulated altitude (kg/m^3)
+// simSoundSpeed  : speed of sound at simulated altitude (m/s)
+// Returns: predicted total airbrake force vector (same force units as ADDONS:FAR:AEROFORCE)
+FUNCTION predictAirbrakeForce {
+    PARAMETER simVelocityVec, simDensity, simSoundSpeed.
+
+    LOCAL totalForce IS V(0,0,0).
+    LOCAL vMag IS simVelocityVec:MAG.
+    IF vMag < 0.01 { RETURN totalForce. }
+    LOCAL vDir IS simVelocityVec:NORMALIZED.
+    LOCAL mach IS vMag / simSoundSpeed.
+    LOCAL q IS 0.5 * simDensity * vMag^2.
+    LOCAL machMult IS getMachMultiplier(mach).
+
+    FOR p IN SHIP:PARTS {
+        IF p:HASMODULE("ModuleAeroSurface") {
+            LOCAL m IS p:GETMODULE("ModuleAeroSurface").
+            LOCAL deployAngle IS m:GETFIELD("deploy angle").
+            LOCAL isDeployed IS m:GETFIELD("deploy"):TOSTRING = "True".
+
+            LOCAL vdotZ IS VDOT(-p:FACING:TOPVECTOR, vDir).
+            SET vdotZ TO MAX(MIN(vdotZ, 1), -1).
+
+            LOCAL deflAngle IS 0.
+            IF isDeployed { SET deflAngle TO SIN(deployAngle - ARCSIN(vdotZ)). }
+            ELSE          { SET deflAngle TO ABS(vdotZ). }
+
+            LOCAL coeff IS getAirbrakeCoeff(p:NAME).
+            LOCAL cd IS getAoAMultiplier(deflAngle) * machMult.
+            LOCAL forceMag IS coeff * q * cd.
+
+            SET totalForce TO totalForce - forceMag * vDir.
+        }
+    }
+    RETURN totalForce.
+}
+What you need to supply, and one honest caveat
+
+Per call: a hypothetical velocity vector, density, and speed of sound for whatever point in your integration you're evaluating — you already need density/sound-speed for your FAR prediction anyway (from BODY:ATM), so this reuses that.
+
+One-time, per distinct airbrake part: deflectionLiftCoeff if it's not stock (pull it from the modded part's .cfg; add one line to airbrakeCoeffOverrides). Nothing else needs per-vehicle setup.
+
+The honest caveat: I reconstructed this formula and the curve keyframes from a community reverse-engineering project, not from Squad's actual closed source, so there may be a unit-scaling constant off (stock forces are often expressed in kN, and I'm not 100% certain this matches ADDONS:FAR:AEROFORCE's scale without a check). I'd verify this once, the same way you're already validating your other predictions: deploy a brake in real flight, compare predictAirbrakeForce against your measured actual-minus-FAR residual, and confirm the scale lines up. That's a one-time sanity check of a constant, not empirical tuning of behavior — after that it should hold across any vehicle using the same part.
