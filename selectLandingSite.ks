@@ -1,10 +1,10 @@
 function selectLandingSite {
-    set impact to addons:tr:impactors.
-
     until addons:tr:hasimpact { 
         print "Waiting for impact".
         wait 1. 
     }
+
+    set impact to addons:tr:impactpos.
 
     set landingNames to list(
         //"KSC",
