@@ -47,7 +47,7 @@ until false {
         predictedTargetVector
     ).
  
-    if requiredDeltaV:mag < 5 { 
+    if requiredDeltaV:mag < 15 { 
         unlock throttle.
         unlock steering.
         print "finished boostback".
