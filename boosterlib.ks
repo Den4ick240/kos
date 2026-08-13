@@ -84,51 +84,6 @@ function getTimeOfFlight {
     LOCAL sinE_start IS (SQRT(1 - e^2) * SIN(thetaStart)) / (1 + e * COS(thetaStart)).
     LOCAL cosE_start IS (e + COS(thetaStart)) / (1 + e * COS(thetaStart)).
     LOCAL E_start IS ARCTAN2(sinE_start, cosE_start) * CONSTANT:PI / 180.
-FUNCTION evalHermiteSegment {
-    PARAMETER x, x0, dx, y0, m0_out, y1, m1_in.
-    LOCAL t IS (x - x0) / dx.
-    LOCAL t2 IS t * t.
-    LOCAL t3 IS t2 * t.
-    RETURN (2*t3 - 3*t2 + 1)*y0 + (t3 - 2*t2 + t)*dx*m0_out + (-2*t3 + 3*t2)*y1 + (t3 - t2)*dx*m1_in.
-}
-
-FUNCTION getMachMultiplier {
-    PARAMETER mach.
-    IF mach <= 0.00 { RETURN 1.0000. }
-    IF mach >= 5.00 { RETURN 3.0000. }
-
-    IF mach < 0.85 {
-        // Interval [0.00, 0.85] (dx = 0.85)
-        RETURN evalHermiteSegment(mach, 0.00, 0.85, 1.0000, 0.00715953, 1.2500, 0.7780356).
-    } ELSE IF mach < 1.10 {
-        // Interval [0.85, 1.10] (dx = 0.25)
-        RETURN evalHermiteSegment(mach, 0.85, 0.25, 1.2500, 0.7780356, 2.5000, 0.2492796).
-    } ELSE {
-        // Interval [1.10, 5.00] (dx = 3.90)
-        RETURN evalHermiteSegment(mach, 1.10, 3.90, 2.5000, 0.2492796, 3.0000, 0.00).
-    }
-}
-
-FUNCTION getAoAMultiplier {
-    PARAMETER absTerm.
-    LOCAL x IS MIN(ABS(absTerm), 1).
-    IF x <= 0.00 { RETURN 0.0100. }
-    IF x >= 1.00 { RETURN 2.4000. }
-
-    IF x < 0.3420201 {
-        // Interval [0.00, 0.3420201] (dx = 0.3420201)
-        RETURN evalHermiteSegment(x, 0.00, 0.3420201, 0.0100, 0.00, 0.0600, 0.1750731).
-    } ELSE IF x < 0.50 {
-        // Interval [0.3420201, 0.50] (dx = 0.1579799)
-        RETURN evalHermiteSegment(x, 0.3420201, 0.1579799, 0.0600, 0.1750731, 0.2400, 2.60928).
-    } ELSE IF x < 0.7071068 {
-        // Interval [0.50, 0.7071068] (dx = 0.2071068)
-        RETURN evalHermiteSegment(x, 0.50, 0.2071068, 0.2400, 2.60928, 1.7000, 3.349777).
-    } ELSE {
-        // Interval [0.7071068, 1.00] (dx = 0.2928932)
-        RETURN evalHermiteSegment(x, 0.7071068, 0.2928932, 1.7000, 3.349777, 2.4000, 0.00).
-    }
-}
     LOCAL sinE_target IS (SQRT(1 - e^2) * SIN(thetaTarget)) / (1 + e * COS(thetaTarget)).
     LOCAL cosE_target IS (e + COS(thetaTarget)) / (1 + e * COS(thetaTarget)).
     LOCAL E_target IS ARCTAN2(sinE_target, cosE_target) * CONSTANT:PI / 180.
@@ -153,59 +108,34 @@ function displayPredictedHit {
     ADDONS:TR:SETTARGET(hitData["impactGeo"]).
 }
 
-// Function to print difference in Lat, Lon, and Meters between Trajectories impactPos and targetPos
-FUNCTION printImpactOffset {
-    PARAMETER targetPos. // Expects a GeoCoordinates object, e.g., LATLNG(lat, lon) or TARGET:GEOPOSITION
-
-    IF NOT ADDONS:TR:HASIMPACT {
-        PRINT "Trajectories: No impact predicted." AT (0, 0).
-        RETURN.
-    }
-
-    LOCAL impactPos IS ADDONS:TR:IMPACTPOS.
-
-    // 1. Angular Differences (Latitude & Longitude in degrees)
-    LOCAL dLat IS impactPos:LAT - targetPos:LAT.
-    LOCAL dLng IS impactPos:LNG - targetPos:LNG.
-
-    // Wrap longitude difference to [-180, 180] degrees
-    UNTIL dLng <= 180 { SET dLng TO dLng - 360. }
-    UNTIL dLng >= -180 { SET dLng TO dLng + 360. }
-
-    // 2. Linear Differences in Meters
-    // Position vector from target surface point to predicted impact point
-    //LOCAL deltaVec IS impactPos:POSITION - targetPos:POSITION.
-
-    //LOCAL totalDist IS deltaVec:MAG.
-    //LOCAL distNorth IS VDOT(deltaVec, targetPos:NORTH:VECTOR).
-    //LOCAL distEast IS VDOT(deltaVec, targetPos:EAST:VECTOR).
-
-    // Print output
-    PRINT "Delta Lat:   " + ROUND(dLat, 5) + " deg   " AT (0, 0).
-    PRINT "Delta Lon:   " + ROUND(dLng, 5) + " deg   " AT (0, 1).
-    //PRINT "Dist Total:  " + ROUND(totalDist, 2) + " m   " AT (0, 2).
-    //PRINT "Dist North:  " + ROUND(distNorth, 2) + " m   " AT (0, 3).
-    //PRINT "Dist East:   " + ROUND(distEast, 2) + " m   " AT (0, 4).
-}
-
-
 function integrateTrajectory {
     parameter simulationVelocity.
-    parameter energyStep is 10000.  // target |ΔE| per step, (m/s)^2 - tune this
-    parameter dtMin is 0.02.
-    parameter dtMax is 4.
+    parameter energyStep is 80000.  // target |ΔE| per step, (m/s)^2 - tune this
+    parameter dtMin is 0.1.
+    parameter dtMax is 8.
 
 
     local hitTime is time:seconds.
+    local startUT is time:seconds.
 
-    local omega is ship:body:angularvel.
+    local body_ is ship:body.
+    local omega is body_:angularvel.
+    local bodyMu is body_:mu.
+    local bodyRadius is body_:radius.
+    local rotationPeriod is body_:rotationperiod.
+    local degPerSec is 360 / rotationPeriod.
+    local shipMass is ship:mass.
     
-    local bodyPos is ship:body:position.
-    local position is ship:position - ship:body:position.
+    local bodyPos is body_:position.
+    local position is ship:position - bodyPos.
+
+    local northDir is (latlng(90, 0):position - bodyPos):normalized.
+    local lon0Dir is (latlng(0, 0):position - bodyPos):normalized.
+    local lon90Dir is (latlng(0, 90):position - bodyPos):normalized.
     local vel is simulationVelocity.
     local aeroAcc is v(0,0,0).
 
-    lock altitude_ to position:mag - ship:body:radius.
+    lock altitude_ to position:mag - bodyRadius.
 
     local prevPosition is position.
     local prevVel is vel.
@@ -217,11 +147,11 @@ function integrateTrajectory {
         parameter vel.
         parameter omega is omega.
 
-        local gAcc is -position:normalized * (ship:body:mu / position:sqrmagnitude).
+        local gAcc is -position:normalized * (bodyMu / position:sqrmagnitude).
         local vSurf is vel - vcrs(omega, position).
-        local aeroForceRaw is addons:far:aeroforceat(position:mag - ship:body:radius, -ship:facing:forevector * vSurf:mag).
+        local aeroForceRaw is addons:far:aeroforceat(position:mag - bodyRadius, -ship:facing:forevector * vSurf:mag).
         local aeroForce is -vSurf:normalized * aeroforceRaw:mag.
-        set aeroAcc to (aeroForce ) / ship:mass.
+        set aeroAcc to (aeroForce ) / shipMass.
 
         local acc is gAcc + aeroAcc.
         return lex(
@@ -231,7 +161,21 @@ function integrateTrajectory {
         ).
     }
 
-    until altitude_ < 5000 and altitude_ <= geoAtSimTime(position, hitTime):terrainheight {
+    function geoAtSimTime {
+        parameter pos.
+        parameter targetUT.
+
+        local posMag is pos:mag.
+        local lat_ is arcsin(vdot(pos, northDir) / posMag).
+        local lon_ is arctan2(vdot(pos, lon90Dir), vdot(pos, lon0Dir)) - degPerSec * (targetUT - startUT).
+
+        until lon_ <= 180 { set lon_ to lon_ - 360. }
+        until lon_ >= -180 { set lon_ to lon_ + 360. }
+
+        return latlng(lat_, lon_).
+    }
+
+    until altitude_ < 1000 and altitude_ <= geoAtSimTime(position, hitTime):terrainheight {
         set prevPosition to position.
         set prevVel to vel.
         set prevAltitude to altitude_.
@@ -273,54 +217,12 @@ function integrateTrajectory {
     local frac is prevHeightAboveTerrain / (prevHeightAboveTerrain - curHeightAboveTerrain).
     set position to prevPosition + (position - prevPosition) * frac.
     set hitTime to prevHitTime + (hitTime - prevHitTime) * frac.
+    print "Time to hit " + (hitTime - time:seconds) at (0, 20).
 
     local impactGeo is geoAtSimTime(position, hitTime).
-
-    clearScreen.
-    printImpactOffset(impactGeo).
-
-    print "" + addons:tr:timetillimpact + " - " + (hitTime - time:seconds) + ": " + (addons:tr:timetillimpact - (hitTime - time:seconds)) at (0, 2).
-    print (vel - vcrs(omega, position)):mag at (0, 3).
-    print aeroAcc:mag at (0, 4).
-    print "predicted acceleration " + getForce(ship:position - ship:body:position, ship:velocity:orbit, ship:body:angularvel)["full"]:mag at (0, 6).
-    print "predicted acceleration gravity " + getForce(ship:position - ship:body:position, ship:velocity:orbit, ship:body:angularvel)["g"]:mag at (0, 7).
-    print "predicted acceleration aero " + getForce(ship:position - ship:body:position, ship:velocity:orbit, ship:body:angularvel)["aero"]:mag at (0, 8).
-    print "impact alt" + (prevTerrainH + (currTerrainH - prevTerrainH) * frac) at (0, 10).
-    set anArrow to vecdraw(
-    {return ship:position.},
-    {return getForce(ship:position - ship:body:position, ship:velocity:orbit, ship:body:angularvel)["full"].},
-    rgb(1,0,0),
-    "hui",
-    1.0,
-    true,0.2,true,true
-    ).
-    set anArrow2 to vecdraw(
-    {return ship:position.},
-    {return getForce(ship:position - ship:body:position, ship:velocity:orbit, ship:body:angularvel)["aero"].},
-    rgb(0,1,0),
-    "",
-    1.0,
-    true,0.2,true,true
-    ).
-    
-    set impactGeo to geoAtSimTime(position, hitTime).
     return lexicon(
         "impactPosition", position,
         "impactGeo", impactGeo,
         "timeToHit", hitTime - time:seconds
     ).
-}
-
-
-function geoAtSimTime {
-    parameter pos.
-    parameter targetUT.   // absolute universal time we actually want the geoposition for
-
-    local nowUT is time:seconds.
-    local rawGeo is ship:body:geopositionof(ship:body:position + pos).   // tainted by whatever "now" is at this exact call
-    //local degPerSec is 360 / ship:body:rotationperiod.
-    local degPerSec is ship:body:angularvel:mag * constant:RadToDeg.
-    local correctionDeg is degPerSec * (nowUT - targetUT).
-
-    return ship:body:geopositionlatlng(rawGeo:lat, rawGeo:lng + correctionDeg).
 }
