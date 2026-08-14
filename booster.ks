@@ -13,4 +13,4 @@ set landingSite to selectLandingSite().
 RUNPATH("0:/den4ick240kos/boostback/boostback_phase1.ks", landingSite).
 //RUNPATH("0:/den4ick240kos/boostback/boostback.ks", landingSite).
 RUNPATH("0:/den4ick240kos/coast.ks").
-RUNPATH("0:/den4ick240kos/aerodescent.ks").
+RUNPATH("0:/den4ick240kos/aerodescent.ks", landingSite).
