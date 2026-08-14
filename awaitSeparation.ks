@@ -1,7 +1,7 @@
 
 function awaitSeparation {
     SET parentVessel TO SHIP:NAME.
-    wait 5.
+    wait 2.
     //WAIT UNTIL SHIP:NAME <> parentVessel.
     PRINT "Booster separated".
 }
