@@ -1,20 +1,21 @@
 runoncepath("0:/den4ick240kos/boosterlib.ks").
 
 parameter landingSite.
-parameter compensationGain to 0.1. // how much of each frame's downrange miss to integrate
-parameter offsetDamping to 0.9.     // leaky-integrator damping (0..1): how much of old offset to keep
+parameter compensationGain to 0.5. // how much of each frame's downrange miss to integrate
+parameter offsetDamping to 0.98.     // leaky-integrator damping (0..1): how much of old offset to keep
 parameter maxOffset to 40000.       // clamp on virtual-target downrange offset, meters
 parameter hitAccuracy to 100.        // meters, break when predicted hit is this close
 parameter noiseFloor to 5.          // meters of frame-to-frame jitter to ignore
 parameter minStagnantFrames to 3.   // consecutive non-improving frames to call it converged
 
-local requiredVelocity to -ship:velocity:orbit.
-local flightPathAngle to 45.
-local downrangeOffset to 0.
-local predictedTimeOfFlight to 0.
+local requiredVelocity is -ship:velocity:orbit.
+local flightPathAngle is 45.
+local downrangeOffset is 0.
+local crossrangeOffset is 0.
+local predictedTimeOfFlight is 0.
 
-local predictedTargetVector to landingSite:position - ship:body:position.
-local virtualTargetVector to predictedTargetVector.
+local predictedTargetVector is landingSite:position - ship:body:position.
+local virtualTargetVector is predictedTargetVector.
 
 local minThrottle is 0.
 
@@ -22,9 +23,6 @@ lock requiredDeltaV to requiredVelocity - ship:velocity:orbit.
 lock steering to lookdirup(requiredDeltaV, ship:up:vector).
 lock throttle to choose min(1.0, requiredDeltaV:mag / 20) 
 if vectorangle(ship:facing:vector, requiredDeltaV) < 5 else minThrottle.
-
-set bestError to 999999.
-set stagnantFrames to 0.
 
 until false {
 
@@ -54,21 +52,43 @@ until false {
         80000, 0.1, 12,
         "rk4", 0.1, 0.001
     ).
-    set predictedTimeOfFlight to aimData["timeToHit"]
-
+    set predictedTimeOfFlight to aimData["timeToHit"].
     local aimGeo is aimData["impactGeo"].
-    local downrangeDir is vectorExclude(predictedTargetVector, predictedTargetVector - (ship:position - ship:body:position)):normalized.
-
-    local alongErr is vdot(aimGeo:position - landingSite:position, downrangeDir).
-    set downrangeOffset to offsetDamping * downrangeOffset - compensationGain * alongErr.
-    if downrangeOffset > maxOffset { set downrangeOffset to maxOffset. }
-    if downrangeOffset < -maxOffset { set downrangeOffset to -maxOffset. }
 
     set predictedTargetVector to angleaxis(
         (360 / ship:body:rotationperiod) * predictedTimeOfFlight,
         -ship:body:north:vector
     ) * (landingSite:position - ship:body:position).    
-    set virtualTargetVector is predictedTargetVector + downrangeDir * downrangeOffset.
+
+    local desiredSurfaceVel is requiredVelocity.// - vcrs(ship:body:angularvel, ship:position - ship:body:position).
+    local downrangeDir is v(0, 0, 0).
+local crossrangeDir is v(0, 0, 0).
+    if vectorExclude(ship:up:vector, desiredSurfaceVel):mag > 0.1 {
+        set downrangeDir to vectorExclude(ship:up:vector, desiredSurfaceVel):normalized.
+    set crossrangeDir to vcrs(ship:up:vector, downrangeDir):normalized.
+    }  
+
+    local alongErr is vdot(aimGeo:position - landingSite:position, downrangeDir).
+local crossErr is vdot(aimGeo:position - landingSite:position, crossrangeDir).
+
+    set downrangeOffset to offsetDamping * downrangeOffset - compensationGain * alongErr.
+    if downrangeOffset > maxOffset { set downrangeOffset to maxOffset. }
+    if downrangeOffset < -maxOffset { set downrangeOffset to -maxOffset. }
+
+set crossrangeOffset to offsetDamping * crossrangeOffset - compensationGain * crossErr.
+
+// Calculate lateral error
+
+// Accumulate lateral offset
+if crossrangeOffset > maxOffset { set crossrangeOffset to maxOffset. }
+if crossrangeOffset < -maxOffset { set crossrangeOffset to -maxOffset. }
+
+// Apply both dimensions to the target vector
+set virtualTargetVector to predictedTargetVector 
+                         + (downrangeDir * downrangeOffset) 
+                         + (crossrangeDir * crossrangeOffset).
+
+//    set virtualTargetVector to predictedTargetVector + downrangeDir * downrangeOffset.
 
     if requiredDeltaV:mag < 5 {
         unlock throttle.

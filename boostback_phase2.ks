@@ -46,7 +46,6 @@ until false {
     // Heading gate: don't thrust until the ship is facing within headingGate
     // degrees of the target bearing, so we don't waste deltaV sideways.
     set facingHoriz to vectorExclude(ship:up:vector, ship:facing:forevector).
-    set targetBearing to vectorExclude(ship:up:vector, landingSite:position - ship:position).
     local headingErr is vectorangle(facingHoriz, horizErrVec).
 
     // kOS built-in PID loop: input is the horizontal error, output is the
