@@ -21,8 +21,26 @@ local minThrottle is 0.
 
 lock requiredDeltaV to requiredVelocity - ship:velocity:orbit.
 lock steering to lookdirup(requiredDeltaV, ship:up:vector).
-lock throttle to choose min(1.0, requiredDeltaV:mag / 20) 
-if vectorangle(ship:facing:vector, requiredDeltaV) < 5 else minThrottle.
+// Calculate independent pitch and yaw deviations from the required burn vector.
+// 90 minus the angle to the top/star vectors gives us the exact pitch/yaw deviation.
+lock pitchErr to abs(90 - vang(ship:facing:topvector, requiredDeltaV)).
+lock yawErr to abs(90 - vang(ship:facing:starvector, requiredDeltaV)).
+
+// Calculate penalty factors from 0.0 (good) to 1.0 (bad).
+// Yaw: 0 at 2 degrees, scales up to 1 at 5 degrees (range of 3).
+lock yawPenalty to max(0, min(1, (yawErr - 3) / 6)).
+
+// Pitch: 0 at 8 degrees, scales up to 1 at 12 degrees (range of 4).
+lock pitchPenalty to max(0, min(1, (pitchErr - 6) / 6)).
+
+// Take the worst of the two penalties
+lock errorPenalty to max(yawPenalty, pitchPenalty).
+
+// Smoothly interpolate the throttle
+lock baseThrottle to min(1.0, requiredDeltaV:mag / 20).
+lock throttle to minThrottle + (baseThrottle - minThrottle) * (1 - errorPenalty).
+//lock throttle to choose min(1.0, requiredDeltaV:mag / 20) 
+//if vectorangle(ship:facing:vector, requiredDeltaV) < 5 else minThrottle.
 
 until false {
 
@@ -90,9 +108,7 @@ set virtualTargetVector to predictedTargetVector
 
 //    set virtualTargetVector to predictedTargetVector + downrangeDir * downrangeOffset.
 
-    if requiredDeltaV:mag < 5 {
-        unlock throttle.
-        unlock steering.
+    if requiredDeltaV:mag < 8 {
         print "switching to error correction guidance".
         break.
     }
@@ -104,4 +120,4 @@ set virtualTargetVector to predictedTargetVector
     wait 0.
 }
 
-runpath("0:/den4ick240kos/boostback_phase2.ks", landingSite).
+runpath("0:/den4ick240kos/boostback/errProjWithThrottle.ks", landingSite, flightPathAngle, true).
