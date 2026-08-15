@@ -117,9 +117,9 @@ function attitudeHold {
         set attR to omegaLocal:z * constant:radtodeg.
     }
 
-    //set ship:control:pitch to ctlP.
-    //set ship:control:yaw to ctlY.
-    //set ship:control:roll to ctlR.
+    set ship:control:pitch to ctlP.
+    set ship:control:yaw to ctlY.
+    set ship:control:roll to ctlR.
 
     set attP to pErr * constant:radtodeg.
     set attY to yErr * constant:radtodeg.
