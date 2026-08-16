@@ -49,7 +49,7 @@ function guidanceUpdate {
     local hitData is integrateTrajectory(
         ship:velocity:orbit,
         guidSite:terrainheight,
-        80000, 0.02, 8
+        80000, 0.02, 4
     ).
     local hitGeo is hitData["impactGeo"].
     addons:tr:settarget(hitgeo).

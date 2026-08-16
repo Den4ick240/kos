@@ -108,6 +108,20 @@ function displayPredictedHit {
     ADDONS:TR:SETTARGET(hitData["impactGeo"]).
 }
 
+global burnMassFlowRate is 0.
+when true then {
+    list engines in _engList.
+    local sum is 0.
+    for eng in _engList {
+        if eng:ignition {
+            set sum to sum + eng:maxmassflow.
+        }
+    }
+    set burnMassFlowRate to sum.
+    print "bmfr " + ship:availablethrust() at (0, 5).
+    return true.
+}
+
 function integrateTrajectory {
     parameter simulationVelocity.
     parameter targetAltitude is 0. // altitude above sea level (m) where the trajectory "hits"; used instead of terrain height
@@ -135,6 +149,10 @@ function integrateTrajectory {
     local vel is simulationVelocity.
     local aeroAcc is v(0,0,0).
 
+    local burnAlt is 2500.
+    local currentMass is shipMass.
+    local inBurn is false.
+
     lock altitude_ to position:mag - bodyRadius.
 
     local prevPosition is position.
@@ -142,7 +160,6 @@ function integrateTrajectory {
     local prevAltitude is altitude_.
     local prevHitTime is hitTime.
 
-    local forceEvals is 0.
     local steps is 0.
 
     function getForce {
@@ -150,17 +167,31 @@ function integrateTrajectory {
         parameter vel.
         parameter omega is omega.
 
-        set forceEvals to forceEvals + 1.
-
         local gAcc is -position:normalized * (bodyMu / position:sqrmagnitude).
-        local vSurf is vel - vcrs(omega, position).
+        local vSurf to vel - vcrs(omega, position).
         local aeroForceRaw is addons:far:aeroforceat(position:mag - bodyRadius, -ship:facing:forevector * vSurf:mag).
         local aeroForce is -vSurf:normalized * aeroforceRaw:mag.
         //local aeroForce is -vSurf:normalized * vdot(aeroforceRaw, -vSurf:normalized).
         //local aeroForce is lookdirup(-vSurf, position) * (ship:facing:inverse * aeroforceRaw).
-        set aeroAcc to (aeroForce ) / shipMass.
+        set aeroAcc to aeroForce / currentMass.
 
-        local acc is gAcc + aeroAcc.
+        local thrustAcc is v(0,0,0).
+        local simAlt is position:mag - bodyRadius.
+        if not inBurn and burnMassFlowRate > 0 and (simAlt - targetAltitude) < burnAlt {
+            set inBurn to true.
+        }
+        if inBurn {
+            print "vel " + vSurf:mag at (0, 6).
+            print "alt " + simAlt at (0, 7).
+            local pressure is 0.
+            if body_:atm:exists {
+                set pressure to body_:atm:altitudepressure(simAlt).
+            }
+            local curThrust is ship:availablethrustat(pressure).
+            set thrustAcc to -vSurf:normalized * (curThrust / currentMass).
+        }
+
+        local acc is gAcc + aeroAcc + thrustAcc.
         return lex(
             "full", acc,
             "aero", aeroAcc,
@@ -191,13 +222,30 @@ function integrateTrajectory {
         local r1 is getforce(position, vel).
         local acc1 is r1["full"].
 
-        local dEdt is vdot(vel, r1["aero"]).
+        local dEdt is vdot(vel, r1["full"]).
         local dt is dtMax.
         if abs(dEdt) > 0.0001 {
             set dt to abs(energyStep / dEdt).
         }
         if dt < dtMin { set dt to dtMin. }
         if dt > dtMax { set dt to dtMax. }
+
+        if not inBurn {
+            local simBurnAlt is burnAlt + targetAltitude.
+            if altitude_ > simBurnAlt {
+                local vertSpeed is vdot(vel, position:normalized).
+                if vertSpeed < 0 {
+                    local projectedAlt is altitude_ + vertSpeed * dt.
+                    if projectedAlt < simBurnAlt {
+                        set dt to max(dtMin, min(dt, (simBurnAlt - altitude_) / vertSpeed)).
+                    }
+                }
+            }
+        }
+
+        if acc1:mag * dt > vel:mag {
+            break.
+        }
 
         local pos2 is position + vel * (dt / 2) + acc1 * (dt * dt / 8).
         local vel2 is vel + acc1 * (dt / 2).
@@ -216,13 +264,31 @@ function integrateTrajectory {
 
         set hitTime to hitTime + dt.
         set steps to steps + 1.
+
+        if not inBurn and altitude_ <= burnAlt + targetAltitude {
+            set inBurn to true.
+        }
+
+        if inBurn {
+            set currentMass to currentMass - burnMassFlowRate * dt.
+            if currentMass < 0.1 { set currentMass to 0.1. }
+            local vSurf is vel - vcrs(omega, position).
+            local vertSpeed is vdot(vSurf, position:normalized).
+            if vSurf:mag < 10 or vertSpeed > -5 or acc1:mag * dt > vSurf:mag {
+                break.
+            }
+        }
     }
 
-    local prevHeightAboveTarget is prevAltitude - targetAltitude.
-    local curHeightAboveTarget is altitude_ - targetAltitude.
-    local frac is prevHeightAboveTarget / (prevHeightAboveTarget - curHeightAboveTarget).
-    set position to prevPosition + (position - prevPosition) * frac.
-    set hitTime to prevHitTime + (hitTime - prevHitTime) * frac.
+    if altitude_ > targetAltitude {
+        set position to position:normalized * (targetAltitude + bodyRadius).
+    } else {
+        local prevHeightAboveTarget is prevAltitude - targetAltitude.
+        local curHeightAboveTarget is altitude_ - targetAltitude.
+        local frac is prevHeightAboveTarget / (prevHeightAboveTarget - curHeightAboveTarget).
+        set position to prevPosition + (position - prevPosition) * frac.
+        set hitTime to prevHitTime + (hitTime - prevHitTime) * frac.
+    }
     print "Time to hit " + (hitTime - time:seconds) at (0, 20).
 
     local impactGeo is geoAtSimTime(position, hitTime).
@@ -231,7 +297,6 @@ function integrateTrajectory {
         "impactGeo", impactGeo,
         "timeToHit", hitTime - time:seconds,
         "simTimeToHit", hitTime - startUT,
-        "steps", steps,
-        "forceEvals", forceEvals
+        "steps", steps
     ).
 }
