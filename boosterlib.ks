@@ -164,7 +164,8 @@ function integrateTrajectory {
         local gAcc is -position:normalized * (bodyMu / position:sqrmagnitude).
         local vSurf is vel - vcrs(omega, position).
         local aeroForceRaw is addons:far:aeroforceat(position:mag - bodyRadius, -ship:facing:forevector * vSurf:mag).
-        local aeroForce is -vSurf:normalized * vdot(aeroforceRaw, -vSurf:normalized).
+        local aeroForce is -vSurf:normalized * aeroforceRaw:mag.
+        //local aeroForce is -vSurf:normalized * vdot(aeroforceRaw, -vSurf:normalized).
         //local aeroForce is lookdirup(-vSurf, position) * (ship:facing:inverse * aeroforceRaw).
         set aeroAcc to (aeroForce ) / shipMass.
 

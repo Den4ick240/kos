@@ -15,10 +15,10 @@
 // Diagnostics (globals):
 //   guidDnErr, guidCrErr (m), guidSteerAngle (deg), guidDnOut, guidCrOut (deg)
 
-set gKp to 0.4.         // deg of steer per meter of horizontal error
-set gKd to 0.08.         // deg per (m/s) of error closing rate
+set gKp to 0.2.         // deg of steer per meter of horizontal error
+set gKd to 0.02.         // deg per (m/s) of error closing rate
 set gSteerSign to 1.0.   // set to -1 if the aero force pushes the wrong way
-set gMaxSteer to 70.     // PID output clamp (deg off retrograde per axis)
+set gMaxSteer to 60.     // PID output clamp (deg off retrograde per axis)
 set gErrorFilter to 0.6. // 0..1 lowpass on the measured error
 
 local guidDownrangePID is PIDLoop(gKp, 0.01, gKd, -gMaxSteer, gMaxSteer).

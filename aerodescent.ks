@@ -6,13 +6,13 @@ parameter landingSite.
 
 local maxRate is 0.6.
 local rateKp is 0.025.
-local rateKd is 0.005.
+local rateKd is 0.01.
 local torqueKp is 10.
 local torqueKd is 1.
 
 local pitchAngleToRate is PIDLoop(rateKp, 0, rateKd, -maxRate, maxRate).
 local yawAngleToRate is PIDLoop(rateKp, 0, rateKd, -maxRate, maxRate).
-local rollAngleToRate is PIDLoop(rateKp, 0, rateKd, -maxRate, maxRate).
+local rollAngleToRate is PIDLoop(0.05, 0, 0.005, -maxRate, maxRate).
 set pitchAngleToRate:setpoint to 0.
 set yawAngleToRate:setpoint to 0.
 set rollAngleToRate:setpoint to 0.
