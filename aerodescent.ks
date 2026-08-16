@@ -27,10 +27,11 @@ set rollRateToTorque:setpoint to 0.
 local desiredDir is srfretrograde:forevector.
 
 local desiredRate is v(1, 0, 0).
+local isAerodescent is true.
 
 guidanceInit(landingSite).
 
-when true then {
+when isAerodescent then {
     local sec is time:seconds.
     local localDesired is ship:facing:inverse * desiredDir.
     local pitchErr is arctan2(localDesired:y, localDesired:z).   // + = nose up
@@ -61,11 +62,8 @@ when true then {
 
 until false {
     set desiredDir to guidanceUpdate().
-    //boot/
-//set desiredDir to srfretrograde:forevector.
     wait 0.
 }
 
-until false {
-wait 1.
-}
+set isAerodescent to false.
+
