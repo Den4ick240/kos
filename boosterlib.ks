@@ -122,6 +122,7 @@ function integrateTrajectory {
     parameter method is "rk45".    // "rk45" (Dormand-Prince 5(4), adaptive) or "rk4"
     parameter rk45Rtol is 0.1.   // relative tolerance for rk45 error control
     parameter rk45Atol is 0.001.   // absolute tolerance for rk45 error control
+    parameter targetAltitude is 0. // altitude above sea level (m) where the trajectory "hits"; used instead of terrain height
 
     local hitTime is time:seconds.
     local startUT is time:seconds.
@@ -202,7 +203,7 @@ function integrateTrajectory {
         local err is 0.
         local k7a is v(0,0,0).
 
-        until altitude_ < 1000 and altitude_ <= geoAtSimTime(position, hitTime):terrainheight {
+        until altitude_ <= targetAltitude {
             set prevPosition to position.
             set prevVel to vel.
             set prevAltitude to altitude_.
@@ -288,7 +289,7 @@ function integrateTrajectory {
             if h > dtMax { set h to dtMax. }
         }
     } else {
-        until altitude_ < 1000 and altitude_ <= geoAtSimTime(position, hitTime):terrainheight {
+        until altitude_ <= targetAltitude {
             set prevPosition to position.
             set prevVel to vel.
             set prevAltitude to altitude_.
@@ -325,11 +326,9 @@ function integrateTrajectory {
         }
     }
 
-    local prevTerrainH is geoAtSimTime(prevPosition, prevHitTime):terrainheight.
-    local currTerrainH is geoAtSimTime(position, hitTime):terrainheight.    
-    local prevHeightAboveTerrain is prevAltitude - prevTerrainH.
-    local curHeightAboveTerrain is altitude_ - currTerrainH.
-    local frac is prevHeightAboveTerrain / (prevHeightAboveTerrain - curHeightAboveTerrain).
+    local prevHeightAboveTarget is prevAltitude - targetAltitude.
+    local curHeightAboveTarget is altitude_ - targetAltitude.
+    local frac is prevHeightAboveTarget / (prevHeightAboveTarget - curHeightAboveTarget).
     set position to prevPosition + (position - prevPosition) * frac.
     set hitTime to prevHitTime + (hitTime - prevHitTime) * frac.
     print "Time to hit " + (hitTime - time:seconds) at (0, 20).

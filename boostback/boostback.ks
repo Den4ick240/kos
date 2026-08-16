@@ -73,7 +73,8 @@ until false {
         local aimData is integrateTrajectory(
             requiredVelocity,
             80000, 0.1, 12,
-            "rk4", 0.1, 0.001
+            "rk4", 0.1, 0.001,
+            landingSite:terrainheight
         ).
         local aimGeo is aimData["impactGeo"].
 
@@ -106,7 +107,8 @@ until false {
     local hitData is integrateTrajectory(
         ship:velocity:orbit,
         80000, 0.1, 8,
-        "rk4", 0.1, 0.001
+        "rk4", 0.1, 0.001,
+        landingSite:terrainheight
     ).
     local hitGeo is hitData["impactGeo"].
     addons:tr:settarget(hitGeo).
