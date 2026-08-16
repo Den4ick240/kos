@@ -67,9 +67,8 @@ until false {
 
     local aimData is integrateTrajectory(
         requiredVelocity,
-        80000, 0.1, 12,
-        "rk4", 0.1, 0.001,
-        landingSite:terrainheight
+        landingSite:terrainheight,
+        80000, 0.1, 12
     ).
     set predictedTimeOfFlight to aimData["timeToHit"].
     local aimGeo is aimData["impactGeo"].
