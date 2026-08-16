@@ -72,9 +72,8 @@ until false {
         // drag-free flight path angle calc overshoots enough to cancel drag.
         local aimData is integrateTrajectory(
             requiredVelocity,
-            80000, 0.1, 12,
-            "rk4", 0.1, 0.001,
-            landingSite:terrainheight
+            landingSite:terrainheight,
+            80000, 0.1, 12
         ).
         local aimGeo is aimData["impactGeo"].
 
@@ -106,8 +105,6 @@ until false {
     // Predict where we'd land if we cut thrust right now (current velocity).
     local hitData is integrateTrajectory(
         ship:velocity:orbit,
-        80000, 0.1, 8,
-        "rk4", 0.1, 0.001,
         landingSite:terrainheight
     ).
     local hitGeo is hitData["impactGeo"].
