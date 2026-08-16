@@ -15,13 +15,13 @@
 // Diagnostics (globals):
 //   guidDnErr, guidCrErr (m), guidSteerAngle (deg), guidDnOut, guidCrOut (deg)
 
-set gKp to 0.04.         // deg of steer per meter of horizontal error
-set gKd to 0.02.         // deg per (m/s) of error closing rate
+set gKp to 0.4.         // deg of steer per meter of horizontal error
+set gKd to 0.08.         // deg per (m/s) of error closing rate
 set gSteerSign to 1.0.   // set to -1 if the aero force pushes the wrong way
-set gMaxSteer to 25.     // PID output clamp (deg off retrograde per axis)
-set gErrorFilter to 0.3. // 0..1 lowpass on the measured error
+set gMaxSteer to 70.     // PID output clamp (deg off retrograde per axis)
+set gErrorFilter to 0.6. // 0..1 lowpass on the measured error
 
-local guidDownrangePID is PIDLoop(gKp, 0, gKd, -gMaxSteer, gMaxSteer).
+local guidDownrangePID is PIDLoop(gKp, 0.01, gKd, -gMaxSteer, gMaxSteer).
 local guidCrossrangePID is PIDLoop(gKp, 0, gKd, -gMaxSteer, gMaxSteer).
 set guidDownrangePID:setpoint to 0.
 set guidCrossrangePID:setpoint to 0.
@@ -48,11 +48,11 @@ function guidanceUpdate {
     // 1. Integrate the trajectory to predict where we'd hit right now.
     local hitData is integrateTrajectory(
         ship:velocity:orbit,
-        80000, 0.1, 8,
-        "rk45", 0.1, 0.001
+        80000, 0.02, 8,
+        "rk4", 0.1, 0.001
     ).
     local hitGeo is hitData["impactGeo"].
-    addons:tr:settarget(hitGeo).
+    addons:tr:settarget(hitgeo).
 
     // 2. Error: horizontal vector from the impact point toward the landing site.
     local errVec is vectorExclude(ship:up:vector, guidSite:position - hitGeo:position).
@@ -80,7 +80,7 @@ function guidanceUpdate {
     set guidCrErr to vdot(guidFilteredErr, crossrangeDir).
 
     // 3. Built-in PIDs, one per axis, output steer offsets in degrees.
-    set guidDnOut to -guidDownrangePID:update(time:seconds, guidDnErr).
+    set guidDnOut to guidDownrangePID:update(time:seconds, guidDnErr).
     set guidCrOut to guidCrossrangePID:update(time:seconds, guidCrErr).
 
     local ctrlVec is downrangeDir * guidDnOut + crossrangeDir * guidCrOut.

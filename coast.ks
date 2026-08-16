@@ -6,6 +6,7 @@ runoncepath("0:/den4ick240kos/boosterlib.ks").
         lock steering to srfretrograde.
         lock throttle to 0.
         wait 1.
+        break.
     }
         print "finished coasting".
 

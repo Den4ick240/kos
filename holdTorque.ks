@@ -1,9 +1,9 @@
-local assumedControlSurfaceRotationSpeed is 2.0 // assume control surface can go from -1 to 1 in one second
+local assumedControlSurfaceRotationSpeed is 2.0. // assume control surface can go from -1 to 1 in one second
 local minExcitation is 0.015. // ignore secant slope if control barely moved last tick
 local gradFilterAlpha is 0.3.   // 0 = trust old slope estimate, 1 = trust newest sample fully
 
 local lastTime is time:seconds.
-local commandGradient is v(4000, 4000, 1500).
+local commandGradient is v(40, 40, 15).
 local prevTorque is getTorque().
 local prevCommand is v(ship:control:pitch, ship:control:yaw, ship:control:roll).
 
@@ -41,7 +41,7 @@ function getMaxRatePerTick {
     local currentTime is time:seconds.
     until currentTime <> lastTime {
         wait 0.
-        set currentTime to time:seconds
+        set currentTime to time:seconds.
     }
     local dt is currentTime - lastTime.
     set lastTime to currentTime.
@@ -49,19 +49,23 @@ function getMaxRatePerTick {
 }
 
 function updateGradient {
+    parameter current, dCommand, dTorque.
+    return current * (1 - gradFilterAlpha) + 
+        (dTorque / dCommand) * gradFilterAlpha.
+}
+
+function updateGradientVector {
     parameter currentTorque, currentCommand.
     local dCommand is currentCommand - prevCommand.
     local dTorque is currentTorque - prevTorque.
-    local newGradient is commandGradient * (1 - gradFilterAlpha) + 
-        divideVector(dTorque, dCommand) * gradFilterAlpha.
     if abs(dCommand:x) > minExcitation {
-        set commandGradient:x to newGradient:x.
+        set commandGradient:x to updateGradient(commandGradient:x, dCommand:x, dTorque:x).
     }
     if abs(dCommand:y) > minExcitation {
-        set commandGradient:y to newGradient:y.
+        set commandGradient:y to updateGradient(commandGradient:y, dCommand:y, dTorque:y).
     }
     if abs(dCommand:z) > minExcitation {
-        set commandGradient:z to newGradient:z.
+        set commandGradient:z to updateGradient(commandGradient:z, dCommand:z, dTorque:z).
     }
 }
 
@@ -72,9 +76,9 @@ function updateTorque {
     local currentTorque is getTorque().
     local currentCommand is v(ship:control:pitch, ship:control:yaw, ship:control:roll).
 
-    updateGradient(currentTorque, currentCommand).
+    updateGradientVector(currentTorque, currentCommand).
 
-    local desiredTorque is v(desiredPitch, desiredYaw, desiredRoll).
+    local desiredTorque is v(-desiredPitch, desiredYaw, desiredRoll) * 10.
 
     local commandIncrement is clampVector(
         divideVector(desiredTorque - currentTorque, commandGradient),
@@ -88,9 +92,16 @@ function updateTorque {
         1.0
     ).
 
-    set ship:control:pitch to prevCommand:x.
-    set ship:control:yaw to prevCommand:y.
-    set ship:control:roll to prevCommand:z.
+    set ship:control:pitch to -prevCommand:x.
+    //set ship:control:yaw to prevCommand:y.
+    //set ship:control:roll to prevCommand:z.
+    
+    print "grad " + commandGradient:x at (0, 1).
+    print "des " + desiredPitch at (0, 2).
+    print "act " + currentTorque:x at (0, 3).
+    print "inc " + commandIncrement:x at (0, 4).
+    print "comm " + prevCommand:x at (0, 5).
+
 
     set prevTorque to currentTorque.
 }
