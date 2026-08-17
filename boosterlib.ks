@@ -112,15 +112,19 @@ global burnMassFlowRate is 0.
 when true then {
     list engines in _engList.
     local sum is 0.
+    local count is 0.
     for eng in _engList {
         if eng:ignition {
             set sum to sum + eng:maxmassflow.
+            set count to count + 1.
         }
     }
     set burnMassFlowRate to sum.
-    print "bmfr " + ship:availablethrust() at (0, 5).
+    print "bmfr " + ship:availablethrust() + " engine count " + count at (0, 5).
     return true.
 }
+
+local burnAlt is 8500.
 
 function integrateTrajectory {
     parameter simulationVelocity.
@@ -149,7 +153,6 @@ function integrateTrajectory {
     local vel is simulationVelocity.
     local aeroAcc is v(0,0,0).
 
-    local burnAlt is 2500.
     local currentMass is shipMass.
     local inBurn is false.
 
@@ -177,12 +180,11 @@ function integrateTrajectory {
 
         local thrustAcc is v(0,0,0).
         local simAlt is position:mag - bodyRadius.
-        if not inBurn and burnMassFlowRate > 0 and (simAlt - targetAltitude) < burnAlt {
+        if not inBurn and burnMassFlowRate > 0 and (simAlt) < burnAlt {
             set inBurn to true.
+            print "SIM burn start: alt " + round(simAlt) + " vsurf " + round(vSurf:mag, 1) + " burnAlt " + round(burnAlt) at (0, 25).
         }
         if inBurn {
-            print "vel " + vSurf:mag at (0, 6).
-            print "alt " + simAlt at (0, 7).
             local pressure is 0.
             if body_:atm:exists {
                 set pressure to body_:atm:altitudepressure(simAlt).
@@ -213,7 +215,7 @@ function integrateTrajectory {
         return latlng(lat_, lon_).
     }
 
-    until altitude_ <= targetAltitude {
+    until altitude_ < targetAltitude - 400 {
         set prevPosition to position.
         set prevVel to vel.
         set prevAltitude to altitude_.
@@ -231,7 +233,7 @@ function integrateTrajectory {
         if dt > dtMax { set dt to dtMax. }
 
         if not inBurn {
-            local simBurnAlt is burnAlt + targetAltitude.
+            local simBurnAlt is burnAlt.
             if altitude_ > simBurnAlt {
                 local vertSpeed is vdot(vel, position:normalized).
                 if vertSpeed < 0 {
@@ -242,10 +244,9 @@ function integrateTrajectory {
                 }
             }
         }
+            local vSurf is vel - vcrs(omega, position).
+            local shouldBreak is acc1:mag * dt > vSurf:mag.
 
-        if acc1:mag * dt > vel:mag {
-            break.
-        }
 
         local pos2 is position + vel * (dt / 2) + acc1 * (dt * dt / 8).
         local vel2 is vel + acc1 * (dt / 2).
@@ -265,31 +266,42 @@ function integrateTrajectory {
         set hitTime to hitTime + dt.
         set steps to steps + 1.
 
-        if not inBurn and altitude_ <= burnAlt + targetAltitude {
-            set inBurn to true.
-        }
 
         if inBurn {
             set currentMass to currentMass - burnMassFlowRate * dt.
             if currentMass < 0.1 { set currentMass to 0.1. }
             local vSurf is vel - vcrs(omega, position).
-            local vertSpeed is vdot(vSurf, position:normalized).
-            if vSurf:mag < 10 or vertSpeed > -5 or acc1:mag * dt > vSurf:mag {
+            local vertSpeed is vdot(vel, position:normalized).
+
+
+
+            if vSurf:mag < 10 or vertSpeed > -5 or  shouldBreak {
+                print "vel " + vSurf:mag at (0, 6).
+                print "alt " + (position:mag - bodyRadius) at (0, 7).
+                print "hvel " + vdot(position:normalized, vel) at (0, 8).
+                print "breaking!" at (0, 9).
                 break.
             }
         }
+
+        if not inBurn and altitude_ <= burnAlt {
+            set inBurn to true.
+        }
     }
 
-    if altitude_ > targetAltitude {
-        set position to position:normalized * (targetAltitude + bodyRadius).
-    } else {
-        local prevHeightAboveTarget is prevAltitude - targetAltitude.
-        local curHeightAboveTarget is altitude_ - targetAltitude.
-        local frac is prevHeightAboveTarget / (prevHeightAboveTarget - curHeightAboveTarget).
-        set position to prevPosition + (position - prevPosition) * frac.
-        set hitTime to prevHitTime + (hitTime - prevHitTime) * frac.
+    local effectiveTarget is targetAltitude + 100.
+    local stopAlt is altitude_.
+
+    local oldBurnAlt is burnAlt.
+    if stopAlt > effectiveTarget {
+        set burnAlt to burnAlt - (stopAlt - effectiveTarget) / 2.
+    } else if stopAlt < effectiveTarget {
+        set burnAlt to burnAlt + (effectiveTarget - stopAlt) * 2.
     }
+
     print "Time to hit " + (hitTime - time:seconds) at (0, 20).
+    print "Stop alt: " + stopAlt + "  Effective target: " + effectiveTarget at (0, 21).
+    print "Burn alt adjusted to: " + burnAlt + " end mass " + currentMass at (0, 23).
 
     local impactGeo is geoAtSimTime(position, hitTime).
     return lexicon(
@@ -298,6 +310,8 @@ function integrateTrajectory {
         "timeToHit", hitTime - time:seconds,
         "simTimeToHit", hitTime - startUT,
         "steps", steps,
-        "burnAltitude", burnAlt + targetAltitude
+        "burnAltitude", oldBurnAlt,
+        "stopAltitude", stopAlt,
+        "effectiveTarget", effectiveTarget
     ).
 }

@@ -89,13 +89,13 @@ function guidanceUpdate {
     set guidSteerAngle to ctrlVec:mag.
     if guidSteerAngle > gMaxSteer { set guidSteerAngle to gMaxSteer. }
 
-    set anArrow1 to vecdraw(
-        {return ship:position.},
-        guidSite:position - hitGeo:position,
-        rgb(0,1,0),
-        "err",
-        1.0, true, 0.2, true, true
-    ).
+    //set anArrow1 to vecdraw(
+    //    {return ship:position.},
+    //    guidSite:position - hitGeo:position,
+    //    rgb(0,1,0),
+    //    "err",
+    //    1.0, true, 0.2, true, true
+    //).
 
     // 4. Steer: rotate the retrograde direction toward the error by steerAngle.
     local desiredDir is srfretrograde:forevector.
@@ -107,13 +107,13 @@ function guidanceUpdate {
         }
     }
 
-    set anArrow2 to vecdraw(
-        {return ship:position.},
-        desiredDir * 200,
-        rgb(1,0,0),
-        "steer",
-        1.0, true, 0.2, true, true
-    ).
+    //set anArrow2 to vecdraw(
+    //    {return ship:position.},
+    //    desiredDir * 200,
+    //    rgb(1,0,0),
+    //    "steer",
+    //    1.0, true, 0.2, true, true
+    //).
 
     print "guid dn " + round(guidDnErr, 0) + "m cr " + round(guidCrErr, 0) + "m steer " + round(guidSteerAngle, 1) + "deg pid " + round(guidDnOut, 1) + "/" + round(guidCrOut, 1) at (0, 22).
     return desiredDir.

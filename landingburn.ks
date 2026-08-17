@@ -12,7 +12,7 @@ until ship:verticalspeed > -10 {
 
 // Phase 2: PID vertical velocity hold
 local targetVertSpeed is -15.
-local vertSpeedPID is PIDLoop(2, 0.5, 0.2, -50, 50).
+local vertSpeedPID is PIDLoop(3, 0, 0, -50, 50).
 set vertSpeedPID:setpoint to targetVertSpeed.
 local desiredThrottle is 0.
 lock throttle to desiredThrottle.
@@ -25,7 +25,7 @@ until ship:status = "LANDED" {
     }
     set vertSpeedPID:setpoint to targetVertSpeed.
 
-    if ship:verticalspeed > targetVertSpeed + 1 {
+    if ship:verticalspeed > targetVertSpeed - 1 {
         lock steering to up.
     } else {
         lock steering to srfretrograde.
