@@ -2,6 +2,8 @@ runoncepath("0:/den4ick240kos/boosterlib.ks").
 runoncepath("0:/den4ick240kos/guidance.ks").
 runoncepath("0:/den4ick240kos/holdTorque.ks").
 
+COPYPATH("0:/den4ick240kos/landingburn.ks", "1:/den4ick240kos/landingburn.ks").
+
 parameter landingSite.
 
 local maxRate is 0.6.
@@ -50,17 +52,23 @@ when isAerodescent then {
     set desiredYaw to yawRateToTorque:update(sec, angularVelLocal:y).
     set desiredRoll to -rollRateToTorque:update(sec, angularVelLocal:z).
 
-    if true {
+    if true and isAerodescent {
         set ship:control:pitch to desiredPitch.
         set ship:control:yaw to desiredYaw.
         set ship:control:roll to desiredRoll.
     } else {
-        updateTorque(desiredPitch, desiredYaw, desiredRoll).
+        //updateTorque(desiredPitch, desiredYaw, desiredRoll).
     }
     return true.
 }
 
-until false {
+when (ship:altitude < guidBurnAltitude) then {
+    print "REAL burn start: alt " + round(ship:altitude) + " vsurf " + round(ship:velocity:surface:mag, 1) + " guidBurnAlt " + round(guidBurnAltitude) at (0, 26).
+    set isAerodescent to false.
+    SET SHIP:CONTROL:NEUTRALIZE to True.
+}
+
+until not isAerodescent {
     set desiredDir to guidanceUpdate().
     if ship:altitude < guidBurnAltitude {
         break.
@@ -68,7 +76,4 @@ until false {
     wait 0.
 }
 
-set isAerodescent to false.
-SET SHIP:CONTROL:NEUTRALIZE to True.
-RUNPATH("0:/den4ick240kos/landingburn.ks").
-
+RUNPATH("1:/den4ick240kos/landingburn.ks").
