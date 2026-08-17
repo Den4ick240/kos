@@ -62,8 +62,13 @@ when isAerodescent then {
 
 until false {
     set desiredDir to guidanceUpdate().
+    if ship:altitude < guidBurnAltitude {
+        break.
+    }
     wait 0.
 }
 
 set isAerodescent to false.
+SET SHIP:CONTROL:NEUTRALIZE to True.
+RUNPATH("0:/den4ick240kos/landingburn.ks").
 

@@ -34,6 +34,7 @@ local guidCrErr to 0.
 local guidSteerAngle to 0.
 local guidDnOut to 0.
 local guidCrOut to 0.
+set guidBurnAltitude to 0.
 
 function guidanceInit {
     parameter site.
@@ -52,6 +53,7 @@ function guidanceUpdate {
         80000, 0.02, 4
     ).
     local hitGeo is hitData["impactGeo"].
+    set guidBurnAltitude to hitData["burnAltitude"].
     addons:tr:settarget(hitgeo).
 
     // 2. Error: horizontal vector from the impact point toward the landing site.

@@ -297,6 +297,7 @@ function integrateTrajectory {
         "impactGeo", impactGeo,
         "timeToHit", hitTime - time:seconds,
         "simTimeToHit", hitTime - startUT,
-        "steps", steps
+        "steps", steps,
+        "burnAltitude", burnAlt + targetAltitude
     ).
 }
