@@ -244,8 +244,12 @@ function integrateTrajectory {
                 }
             }
         }
-            local vSurf is vel - vcrs(omega, position).
-            local shouldBreak is acc1:mag * dt > vSurf:mag.
+        local vSurf is vel - vcrs(omega, position).
+        local shouldBreak is acc1:mag * dt > vSurf:mag .
+        if shouldBreak {
+            set dt to vSurf:mag / acc1:mag.
+            set shouldBreak to true.
+        }
 
 
         local pos2 is position + vel * (dt / 2) + acc1 * (dt * dt / 8).
@@ -289,14 +293,14 @@ function integrateTrajectory {
         }
     }
 
-    local effectiveTarget is targetAltitude + 100.
+    local effectiveTarget is targetAltitude + 70.
     local stopAlt is altitude_.
 
     local oldBurnAlt is burnAlt.
     if stopAlt > effectiveTarget {
-        set burnAlt to burnAlt - (stopAlt - effectiveTarget) / 2.
+        set burnAlt to burnAlt - (stopAlt - effectiveTarget) / 3.
     } else if stopAlt < effectiveTarget {
-        set burnAlt to burnAlt + (effectiveTarget - stopAlt) * 2.
+        set burnAlt to burnAlt + (effectiveTarget - stopAlt) * 3.
     }
 
     print "Time to hit " + (hitTime - time:seconds) at (0, 20).
