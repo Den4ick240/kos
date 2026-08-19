@@ -245,9 +245,10 @@ function integrateTrajectory {
             }
         }
         local vSurf is vel - vcrs(omega, position).
-        local shouldBreak is acc1:mag * dt > vSurf:mag .
+        local vava is vdot(-vSurf:normalized, acc1). 
+        local shouldBreak is vava* dt > vSurf:mag .
         if shouldBreak {
-            set dt to vSurf:mag / acc1:mag.
+            set dt to vSurf:mag / vava.
             set shouldBreak to true.
         }
 
@@ -279,7 +280,7 @@ function integrateTrajectory {
 
 
 
-            if vSurf:mag < 10 or vertSpeed > -5 or  shouldBreak {
+            if   shouldBreak {
                 print "vel " + vSurf:mag at (0, 6).
                 print "alt " + (position:mag - bodyRadius) at (0, 7).
                 print "hvel " + vdot(position:normalized, vel) at (0, 8).
@@ -293,7 +294,7 @@ function integrateTrajectory {
         }
     }
 
-    local effectiveTarget is targetAltitude + 70.
+    local effectiveTarget is targetAltitude + 150.
     local stopAlt is altitude_.
 
     local oldBurnAlt is burnAlt.
