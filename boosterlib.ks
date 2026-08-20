@@ -108,19 +108,22 @@ function displayPredictedHit {
     ADDONS:TR:SETTARGET(hitData["impactGeo"]).
 }
 
+global simulationThrottle is 1.
 global burnMassFlowRate is 0.
-when true then {
+global nextMassFlowRateTime is time:seconds.
+when nextMassFlowRateTime < time:seconds then {
     list engines in _engList.
     local sum is 0.
     local count is 0.
     for eng in _engList {
         if eng:ignition {
-            set sum to sum + eng:maxmassflow.
+            set sum to sum + eng:maxmassflow * eng:thrustlimit / 100.
             set count to count + 1.
         }
     }
-    set burnMassFlowRate to sum.
+    set burnMassFlowRate to sum * simulationThrottle.
     print "bmfr " + ship:availablethrust() + " engine count " + count at (0, 5).
+    set nextMassFlowRateTime to time:seconds + 5.
     return true.
 }
 
@@ -163,6 +166,8 @@ function integrateTrajectory {
     local prevAltitude is altitude_.
     local prevHitTime is hitTime.
 
+    local burnStartVelocity is 0.
+
     local steps is 0.
 
     function getForce {
@@ -172,16 +177,16 @@ function integrateTrajectory {
 
         local gAcc is -position:normalized * (bodyMu / position:sqrmagnitude).
         local vSurf to vel - vcrs(omega, position).
-        local aeroForceRaw is addons:far:aeroforceat(position:mag - bodyRadius, -ship:facing:forevector * vSurf:mag).
+        local fff is ship:facing.
+        local aeroForceRaw is addons:far:aeroforceat(position:mag - bodyRadius, -fff:forevector * vSurf:mag).
         local aeroForce is -vSurf:normalized * aeroforceRaw:mag.
         //local aeroForce is -vSurf:normalized * vdot(aeroforceRaw, -vSurf:normalized).
-        //local aeroForce is lookdirup(-vSurf, position) * (ship:facing:inverse * aeroforceRaw).
+        //local aeroForce is lookdirup(-vSurf, position) * (fff:inverse * aeroforceRaw).
         set aeroAcc to aeroForce / currentMass.
 
         local thrustAcc is v(0,0,0).
         local simAlt is position:mag - bodyRadius.
         if not inBurn and burnMassFlowRate > 0 and (simAlt) < burnAlt {
-            set inBurn to true.
             print "SIM burn start: alt " + round(simAlt) + " vsurf " + round(vSurf:mag, 1) + " burnAlt " + round(burnAlt) at (0, 25).
         }
         if inBurn {
@@ -189,8 +194,11 @@ function integrateTrajectory {
             if body_:atm:exists {
                 set pressure to body_:atm:altitudepressure(simAlt).
             }
-            local curThrust is ship:availablethrustat(pressure).
+            local curThrust is ship:availablethrustat(pressure) * simulationThrottle.
             set thrustAcc to -vSurf:normalized * (curThrust / currentMass).
+            set aeroAcc to aeroAcc * 0.9.
+        } else {
+
         }
 
         local acc is gAcc + aeroAcc + thrustAcc.
@@ -249,7 +257,6 @@ function integrateTrajectory {
         local shouldBreak is vava* dt > vSurf:mag .
         if shouldBreak {
             set dt to vSurf:mag / vava.
-            set shouldBreak to true.
         }
 
 
@@ -284,12 +291,17 @@ function integrateTrajectory {
                 print "vel " + vSurf:mag at (0, 6).
                 print "alt " + (position:mag - bodyRadius) at (0, 7).
                 print "hvel " + vdot(position:normalized, vel) at (0, 8).
-                print "breaking!" at (0, 9).
+                print "burn start vel " + burnStartVelocity:mag at (0, 9).
                 break.
             }
         }
 
-        if not inBurn and altitude_ <= burnAlt {
+        local nowInBurn is not inBurn and altitude_ <= burnAlt.
+        if nowInBurn {
+            set burnStartVelocity to vel - vcrs(omega, position).
+        }
+        
+        if nowInBurn {
             set inBurn to true.
         }
     }
