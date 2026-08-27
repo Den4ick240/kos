@@ -3,6 +3,7 @@ runoncepath("0:/den4ick240kos/guidance.ks").
 runoncepath("0:/den4ick240kos/holdTorque.ks").
 
 COPYPATH("0:/den4ick240kos/landingburn.ks", "1:/den4ick240kos/landingburn.ks").
+COPYPATH("0:/den4ick240kos/apdg.ks", "1:/den4ick240kos/apdg.ks").
 
 parameter landingSite.
 
@@ -77,3 +78,4 @@ until not isAerodescent {
 }
 
 RUNPATH("1:/den4ick240kos/landingburn.ks").
+//RUNPATH("1:/den4ick240kos/apdg.ks", landingSite).
