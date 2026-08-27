@@ -1,4 +1,22 @@
 runoncepath("0:/den4ick240kos/airbrakeForce.ks").
+function getHeightFromOriginToBottom {
+    // Physical distance (m) from the vessel coordinate origin (CoM) down to the
+    // bottom-most point of the craft, measured along the ship's own fore/aft axis.
+    // Independent of ship orientation: it's the length of the craft below the CoM,
+    // so it stays constant whether the ship is vertical or pitched over.
+    local fore is ship:facing:forevector.
+    local aftRay is -fore.
+    local farthest is 0.
+    list parts in _allParts.
+    for p in _allParts {
+        local b is p:bounds.
+        local corner is b:furthestcorner(aftRay).
+        local d is vdot(corner, fore).
+        if d < farthest { set farthest to d. }
+    }
+    return -farthest.
+}
+
 function getRequiredVelocityForFlightPathAngle {
     parameter flightPathAngle.
     parameter targetVector.
@@ -108,7 +126,7 @@ function displayPredictedHit {
     ADDONS:TR:SETTARGET(hitData["impactGeo"]).
 }
 
-global simulationThrottle is 1.
+global simulationThrottle is 0.9.
 global burnMassFlowRate is 0.
 global nextMassFlowRateTime is time:seconds.
 when nextMassFlowRateTime < time:seconds then {
@@ -139,6 +157,7 @@ function integrateTrajectory {
     local hitTime is time:seconds.
     local startUT is time:seconds.
 
+    local vesselHeight is getHeightFromOriginToBottom().
     local body_ is ship:body.
     local omega is body_:angularvel.
     local bodyMu is body_:mu.
@@ -196,7 +215,7 @@ function integrateTrajectory {
             }
             local curThrust is ship:availablethrustat(pressure) * simulationThrottle.
             set thrustAcc to -vSurf:normalized * (curThrust / currentMass).
-            set aeroAcc to aeroAcc * 0.9.
+            set aeroAcc to aeroAcc * 0.85.
         } else {
 
         }
@@ -306,7 +325,7 @@ function integrateTrajectory {
         }
     }
 
-    local effectiveTarget is targetAltitude + 150.
+    local effectiveTarget is targetAltitude + vesselHeight + 15.
     local stopAlt is altitude_.
 
     local oldBurnAlt is burnAlt.
