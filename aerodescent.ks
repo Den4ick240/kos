@@ -28,6 +28,7 @@ local rollRateToTorque is PIDLoop(torqueKp, 0, torqueKd, -maxTorque, maxTorque).
 set rollRateToTorque:setpoint to 0.
 
 local desiredDir is srfretrograde:forevector.
+local hitTime is 0.
 
 local desiredRate is v(1, 0, 0).
 local isAerodescent is true.
@@ -70,12 +71,14 @@ when (ship:altitude < guidBurnAltitude) then {
 }
 
 until not isAerodescent {
-    set desiredDir to guidanceUpdate().
+    local aa is guidanceUpdate().
+    set desiredDir to aa["a"].
+    set hitTime to aa["b"].
     if ship:altitude < guidBurnAltitude {
         break.
     }
     wait 0.
 }
 
-RUNPATH("1:/den4ick240kos/landingburn.ks").
-//RUNPATH("1:/den4ick240kos/apdg.ks", landingSite).
+//RUNPATH("1:/den4ick240kos/landingburn.ks").
+RUNPATH("1:/den4ick240kos/apdg.ks", landingSite, hitTime).

@@ -5,8 +5,7 @@ function getThrottle {
 
     local desiredAcc is 0.
     local altRemaining is max(ship:bounds:bottomaltradar, 1).
-    local vspeed is min(0, verticalspeed).
-    local desiredAcc is (vspeed * vspeed * 0.5 / altRemaining + g) / facingDotUp.
+    local desiredAcc is (-abs(verticalspeed) * verticalspeed * 0.5 / altRemaining + g) / facingDotUp.
     return max(
         0,
         min(
