@@ -126,7 +126,7 @@ function displayPredictedHit {
     ADDONS:TR:SETTARGET(hitData["impactGeo"]).
 }
 
-global simulationThrottle is 0.9.
+global simulationThrottle is 0.85.
 global burnMassFlowRate is 0.
 global nextMassFlowRateTime is time:seconds.
 when nextMassFlowRateTime < time:seconds then {
@@ -344,6 +344,7 @@ function integrateTrajectory {
         "impactPosition", position,
         "impactGeo", impactGeo,
         "timeToHit", hitTime - time:seconds,
+        "hitTime", hitTime,
         "simTimeToHit", hitTime - startUT,
         "steps", steps,
         "burnAltitude", oldBurnAlt,

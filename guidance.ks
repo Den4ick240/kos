@@ -54,7 +54,7 @@ function guidanceUpdate {
     ).
     local hitGeo is hitData["impactGeo"].
     set guidBurnAltitude to hitData["burnAltitude"].
-    addons:tr:settarget(hitgeo).
+    //addons:tr:settarget(hitgeo).
 
     // 2. Error: horizontal vector from the impact point toward the landing site.
     local errVec is vectorExclude(ship:up:vector, guidSite:position - hitGeo:position).
@@ -116,5 +116,5 @@ function guidanceUpdate {
     //).
 
     print "guid dn " + round(guidDnErr, 0) + "m cr " + round(guidCrErr, 0) + "m steer " + round(guidSteerAngle, 1) + "deg pid " + round(guidDnOut, 1) + "/" + round(guidCrOut, 1) at (0, 22).
-    return desiredDir.
+    return lex("a", desiredDir, "b", hitData["hitTime"]).
 }
