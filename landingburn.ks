@@ -17,7 +17,7 @@ function getThrottle {
 
 lock throttle to getThrottle().
 lock steering to srfretrograde.
-until ship:verticalspeed > -10 {
+until ship:verticalspeed > -40 {
     wait 0.
 }
 lock steering to lookdirup(up:vector, facing:topvector).

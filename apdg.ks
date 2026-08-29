@@ -3,6 +3,16 @@ parameter landingSite.
 parameter hitTime.
 
 
+local startPosition is ship:position - ship:body:position.
+local g is ship:body:mu / startPosition:sqrmagnitude.
+local touchdownThrust is availablethrust.
+local touchdownAcceleration is touchdownThrust * 0.5 / mass - g.
+local touchdownTime is 2.
+local switchVelocity is touchdownTime * touchdownAcceleration.
+local switchOffset is touchdownTime * switchVelocity / 2.
+
+set hitTime to time:seconds + (hitTime - time:seconds) * 1.15 - touchdownTime.
+
 
 
 local lastState is lexicon(
@@ -19,7 +29,7 @@ local lastState is lexicon(
 function getState {
     parameter startTime, startPosition, startVelocity, gravityVec, timeToGo.
     local af is -gravityVec * 1.1.
-    local vf is gravityVec:normalized * 40.
+    local vf is gravityVec:normalized * switchVelocity.
     local ttgsq is timeToGo * timeToGo.
     local ttgcb is ttgsq * timeToGo.
     local ttg4 is ttgsq * ttgsq.
@@ -51,14 +61,14 @@ until ship:status = "LANDED" {
     local startPosition is ship:position - ship:body:position.
     local gAcc is -startPosition:normalized * ship:body:mu / startPosition:sqrmagnitude.
 
-    local offsetLandingSitePosition is landingSite:altitudeposition(landingSite:terrainheight + getHeightFromOriginToBottom() + 20). // todo offset by ship height
+    local offsetLandingSitePosition is landingSite:altitudeposition(landingSite:terrainheight + getHeightFromOriginToBottom() + switchOffset). // todo offset by ship height
     local vsTargetPosition is ship:position - offsetLandingSitePosition.
     local height is vdot(up:vector, vsTargetPosition).
     //local ttg is 2 * vdot(up:vector, vsTargetPosition) / -verticalspeed.
     //local ttg is ship:velocity:surface:mag * 1.1 / (availablethrust / mass - gAcc:mag * vdot(up:vector, facing:vector)).
     //set ttg to max(0.1, ttg).
     //print ttg.
-    local ttg is hitTime - time:seconds.
+    local ttg is hitTime - time:seconds .
     if ttg < 5 {
         set gear to true.
     }
