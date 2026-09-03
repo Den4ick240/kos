@@ -1,7 +1,5 @@
 
 function awaitSeparation {
-    SET parentVessel TO SHIP:NAME.
-    wait 0.
-    //WAIT UNTIL SHIP:NAME <> parentVessel.
+    wait until ship:modulesnamed("kOSProcessor"):length = 1.
     PRINT "Booster separated".
 }

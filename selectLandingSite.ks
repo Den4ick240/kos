@@ -7,7 +7,7 @@ function selectLandingSite {
     set impact to addons:tr:impactpos.
 
     set landingNames to list(
-        //"KSC",
+        "KSC",
         "Island Airfield"
     ).
 
@@ -26,7 +26,7 @@ function selectLandingSite {
 
         IF distance < bestDistance {
             SET bestDistance TO distance.
-            SET bestTarget TO pos.
+            SET bestTarget TO wp.
             SET bestName TO name.
         }
     }
