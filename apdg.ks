@@ -2,7 +2,6 @@ runoncepath("0:/den4ick240kos/boosterlib.ks").
 parameter landingSite.
 parameter hitTime.
 
-
 local startPosition is ship:position - ship:body:position.
 local g is ship:body:mu / startPosition:sqrmagnitude.
 local touchdownThrust is availablethrust.
@@ -12,8 +11,6 @@ local switchVelocity is touchdownTime * touchdownAcceleration.
 local switchOffset is touchdownTime * switchVelocity / 2.
 
 set hitTime to time:seconds + (hitTime - time:seconds) * 1.15 - touchdownTime.
-
-
 
 local lastState is lexicon(
     "startTime", time:seconds,
