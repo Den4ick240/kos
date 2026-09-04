@@ -44,7 +44,7 @@ lock throttle to minThrottle + (baseThrottle - minThrottle) * (1 - errorPenalty)
 
 until false {
 
-    local lowAngle is max(2, flightPathAngle - 25).
+    local lowAngle is max(-85, flightPathAngle - 25).
     local highAngle is min(85, flightPathAngle + 25).
 
     from { local i is 0. } until i = 8 step { set i to i + 1. } do {

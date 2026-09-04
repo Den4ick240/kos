@@ -22,7 +22,7 @@ function getRequiredVelocityForFlightPathAngle {
     parameter targetVector.
 
     local flightPathCos is cos(flightPathAngle).
-    if abs(flightPathCos) < 0.0001 { return 999999. }
+    if abs(flightPathCos) < 0.0001 { return ship:velocity:orbit. }
 
     local selfVector is ship:position - ship:body:position.
     local flightAngle is vectorangle(selfVector, targetVector).
@@ -33,7 +33,7 @@ function getRequiredVelocityForFlightPathAngle {
         selfMagnitude / targetMagnitude - cos(flightAngle + flightPathAngle) / flightPathCos
     ).
 
-    if denomBracket <= 0 { return 999999. }
+    if denomBracket <= 0 { return ship:velocity:orbit. }
 
     local desiredVelocitySquared is (
         ship:body:mu * (1 - cos(flightAngle))
@@ -41,7 +41,7 @@ function getRequiredVelocityForFlightPathAngle {
         selfMagnitude * flightPathCos * flightPathCos * denomBracket 
     ).
 
-    if desiredVelocitySquared <= 0 { return 999999. }
+    if desiredVelocitySquared <= 0 { return ship:velocity:orbit. }
 
     local desiredVelocityMagnitude is sqrt(desiredVelocitySquared ).
 
