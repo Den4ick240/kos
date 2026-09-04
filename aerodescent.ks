@@ -35,32 +35,37 @@ local isAerodescent is true.
 
 guidanceInit(landingSite).
 
+set steeringmanager:yawtorquefactor to 0.6.
+set steeringmanager:pitchtorquefactor to 0.6.
 when isAerodescent then {
     local sec is time:seconds.
-    local localDesired is ship:facing:inverse * desiredDir.
-    local pitchErr is arctan2(localDesired:y, localDesired:z).   // + = nose up
-    local yawErr is arctan2(localDesired:x, localDesired:z).   // + = nose starboard
-    local rollErr TO 90 - VANG(SHIP:FACING:STARVECTOR, UP:VECTOR).
+    lock steering to lookdirup(desiredDir, up:vector).
+    //local localDesired is ship:facing:inverse * desiredDir.
+    //local pitchErr is arctan2(localDesired:y, localDesired:z).   // + = nose up
+    //local yawErr is arctan2(localDesired:x, localDesired:z).   // + = nose starboard
+    ////local rollErr TO 90 - VANG(SHIP:FACING:STARVECTOR, UP:VECTOR).
+    //local localUp is ship:facing:inverse * up:vector.
+    //local rollErr is arctan2(localUp:x, localUp:y).
 
-    print "pitch error" + pitchErr at (0, 0).
-    
-    local angularVelLocal is ship:facing:inverse * ship:angularvel.
+    //print "pitch error" + pitchErr at (0, 0).
+    //
+    //local angularVelLocal is ship:facing:inverse * ship:angularvel.
 
-    set pitchRateToTorque:setpoint to pitchAngleToRate:update(sec, pitchErr).
-    set yawRateToTorque:setpoint to -yawAngleToRate:update(sec, yawErr).
-    set rollRateToTorque:setpoint to rollAngleToRate:update(sec, rollErr).
+    //set pitchRateToTorque:setpoint to pitchAngleToRate:update(sec, pitchErr).
+    //set yawRateToTorque:setpoint to -yawAngleToRate:update(sec, yawErr).
+    //set rollRateToTorque:setpoint to rollAngleToRate:update(sec, rollErr).
 
-    set desiredPitch to -pitchRateToTorque:update(sec, angularVelLocal:x).    
-    set desiredYaw to yawRateToTorque:update(sec, angularVelLocal:y).
-    set desiredRoll to -rollRateToTorque:update(sec, angularVelLocal:z).
+    //set desiredPitch to -pitchRateToTorque:update(sec, angularVelLocal:x).    
+    //set desiredYaw to yawRateToTorque:update(sec, angularVelLocal:y).
+    //set desiredRoll to -rollRateToTorque:update(sec, angularVelLocal:z).
 
-    if true and isAerodescent {
-        set ship:control:pitch to desiredPitch.
-        set ship:control:yaw to desiredYaw.
-        set ship:control:roll to desiredRoll.
-    } else {
-        //updateTorque(desiredPitch, desiredYaw, desiredRoll).
-    }
+    //if true and isAerodescent {
+    //    set ship:control:pitch to desiredPitch.
+    //    set ship:control:yaw to desiredYaw.
+    //    set ship:control:roll to desiredRoll.
+    //} else {
+    //    //updateTorque(desiredPitch, desiredYaw, desiredRoll).
+    //}
     return true.
 }
 
