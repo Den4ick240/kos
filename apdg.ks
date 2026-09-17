@@ -6,11 +6,11 @@ local startPosition is ship:position - ship:body:position.
 local g is ship:body:mu / startPosition:sqrmagnitude.
 local touchdownThrust is availablethrust.
 local touchdownAcceleration is touchdownThrust * 0.5 / mass - g.
-local touchdownTime is 2.
+local touchdownTime is 3.
 local switchVelocity is touchdownTime * touchdownAcceleration.
 local switchOffset is touchdownTime * switchVelocity / 2.
 
-set hitTime to time:seconds + (hitTime - time:seconds) * 1.15 - touchdownTime.
+set hitTime to time:seconds + (hitTime - time:seconds) * 1.2 - touchdownTime.
 
 local lastState is lexicon(
     "startTime", time:seconds,
@@ -69,9 +69,9 @@ until ship:status = "LANDED" {
     if ttg < 5 {
         set gear to true.
     }
-    if ttg < 1 or height < 20 {
+    if ttg < 2 or height < 20 {
         set gear to true.
-        RUNPATH("1:/den4ick240kos/landingburn.ks").
+        RUNPATH("1:/den4ick240kos/landingburn.ks", landingSite).
         break.
     }
 
