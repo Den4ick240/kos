@@ -3,15 +3,15 @@ if lbSite = 0 {
     set lbSite to guidSite.
 }
 
-set lbDistKP to 0.25.
-set lbDistKI to 0.01.
-set lbDistKD to 0.3.
+set lbDistKP to 0.85.
+set lbDistKI to 0.0.
+set lbDistKD to 0.4.
 set lbVelKP to 1.0.
-set lbVelKI to 0.05.
+set lbVelKI to 0.00.
 set lbVelKD to 1.5.
-set lbMaxHSpeed to 15.
-set lbMaxTilt to 30.
-set lbKillWindow to 2.0.
+set lbMaxHSpeed to 10.
+set lbMaxTilt to 15.
+set lbKillWindow to 0.1.
 
 local distDownrangePID is PIDLoop(lbDistKP, lbDistKI, lbDistKD, -lbMaxHSpeed, lbMaxHSpeed).
 local distCrossrangePID is PIDLoop(lbDistKP, lbDistKI, lbDistKD, -lbMaxHSpeed, lbMaxHSpeed).
@@ -68,8 +68,8 @@ function getTiltSteering {
     if killFactor > 1 { set killFactor to 1. }
     if killFactor < 0 { set killFactor to 0. }
 
-    local wantDn is distDownrangePID:update(time:seconds, posDn) * killFactor.
-    local wantCr is distCrossrangePID:update(time:seconds, posCr) * killFactor.
+    local wantDn is -distDownrangePID:update(time:seconds, posDn) * killFactor.
+    local wantCr is -distCrossrangePID:update(time:seconds, posCr) * killFactor.
 
     local hVel is vectorExclude(upV, ship:velocity:surface).
     local actDn is vdot(hVel, dnDir).

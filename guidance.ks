@@ -15,13 +15,13 @@
 // Diagnostics (globals):
 //   guidDnErr, guidCrErr (m), guidSteerAngle (deg), guidDnOut, guidCrOut (deg)
 
-set gKp to 0.2.         // deg of steer per meter of horizontal error
-set gKd to 0.02.         // deg per (m/s) of error closing rate
+set gKp to 0.5.         // deg of steer per meter of horizontal error
+set gKd to 0.01.         // deg per (m/s) of error closing rate
 set gSteerSign to 1.0.   // set to -1 if the aero force pushes the wrong way
 set gMaxSteer to 60.     // PID output clamp (deg off retrograde per axis)
 set gErrorFilter to 0.6. // 0..1 lowpass on the measured error
 
-local guidDownrangePID is PIDLoop(gKp, 0.01, gKd, -gMaxSteer, gMaxSteer).
+local guidDownrangePID is PIDLoop(gKp, 0.00, gKd, -gMaxSteer, gMaxSteer).
 local guidCrossrangePID is PIDLoop(gKp, 0, gKd, -gMaxSteer, gMaxSteer).
 set guidDownrangePID:setpoint to 0.
 set guidCrossrangePID:setpoint to 0.
@@ -115,6 +115,6 @@ function guidanceUpdate {
     //    1.0, true, 0.2, true, true
     //).
 
-    print "guid dn " + round(guidDnErr, 0) + "m cr " + round(guidCrErr, 0) + "m steer " + round(guidSteerAngle, 1) + "deg pid " + round(guidDnOut, 1) + "/" + round(guidCrOut, 1) at (0, 22).
+    //print "guid dn " + round(guidDnErr, 0) + "m cr " + round(guidCrErr, 0) + "m steer " + round(guidSteerAngle, 1) + "deg pid " + round(guidDnOut, 1) + "/" + round(guidCrOut, 1) at (0, 22).
     return lex("a", desiredDir, "b", hitData["hitTime"]).
 }

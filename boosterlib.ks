@@ -140,7 +140,7 @@ when nextMassFlowRateTime < time:seconds then {
         }
     }
     set burnMassFlowRate to sum * simulationThrottle.
-    print "bmfr " + ship:availablethrust() + " engine count " + count at (0, 5).
+    //print "bmfr " + ship:availablethrust() + " engine count " + count at (0, 5).
     set nextMassFlowRateTime to time:seconds + 5.
     return true.
 }
@@ -206,7 +206,7 @@ function integrateTrajectory {
         local thrustAcc is v(0,0,0).
         local simAlt is position:mag - bodyRadius.
         if not inBurn and burnMassFlowRate > 0 and (simAlt) < burnAlt {
-            print "SIM burn start: alt " + round(simAlt) + " vsurf " + round(vSurf:mag, 1) + " burnAlt " + round(burnAlt) at (0, 25).
+            //print "SIM burn start: alt " + round(simAlt) + " vsurf " + round(vSurf:mag, 1) + " burnAlt " + round(burnAlt) at (0, 25).
         }
         if inBurn {
             local pressure is 0.
@@ -307,10 +307,10 @@ function integrateTrajectory {
 
 
             if   shouldBreak {
-                print "vel " + vSurf:mag at (0, 6).
-                print "alt " + (position:mag - bodyRadius) at (0, 7).
-                print "hvel " + vdot(position:normalized, vel) at (0, 8).
-                print "burn start vel " + burnStartVelocity:mag at (0, 9).
+                //print "vel " + vSurf:mag at (0, 6).
+                //print "alt " + (position:mag - bodyRadius) at (0, 7).
+                //print "hvel " + vdot(position:normalized, vel) at (0, 8).
+                //print "burn start vel " + burnStartVelocity:mag at (0, 9).
                 break.
             }
         }
@@ -335,9 +335,9 @@ function integrateTrajectory {
         set burnAlt to burnAlt + (effectiveTarget - stopAlt) * 3.
     }
 
-    print "Time to hit " + (hitTime - time:seconds) at (0, 20).
-    print "Stop alt: " + stopAlt + "  Effective target: " + effectiveTarget at (0, 21).
-    print "Burn alt adjusted to: " + burnAlt + " end mass " + currentMass at (0, 23).
+    //print "Time to hit " + (hitTime - time:seconds) at (0, 20).
+    //print "Stop alt: " + stopAlt + "  Effective target: " + effectiveTarget at (0, 21).
+    //print "Burn alt adjusted to: " + burnAlt + " end mass " + currentMass at (0, 23).
 
     local impactGeo is geoAtSimTime(position, hitTime).
     return lexicon(

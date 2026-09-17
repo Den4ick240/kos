@@ -79,7 +79,7 @@ until ship:status = "LANDED" {
 
     
     local acceleration is state["a"].
-    lock steering to lookdirup(acceleration, up:vector).
+    lock steering to lookdirup(acceleration, ship:facing:topvector).
     lock throttle to max(0.1, min(1, 
         mass * acceleration:mag / availablethrust
     )).
