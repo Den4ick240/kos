@@ -1,8 +1,10 @@
-runoncepath("0:/den4ick240kos/boosterProfile/loadProfile.ks").
+runoncepath(scriptpath():parent + "/loadProfile").
+runoncepath(scriptpath():parent + "/getLiveProfile").
 local profilePath is "0:/bosterprofiles/test.json".
 local profile is loadboosterprofile(profilePath).
+local liveProfile is getLiveProfile().
 
-local testAltitude is 15010.
+local testAltitude is 1510.
 local testSpeed is 1260.
 
 print "=== PROFILE TEST ===".
@@ -10,48 +12,28 @@ print "Altitude: " + testAltitude.
 print "Speed:    " + testSpeed.
 print "".
 
-local pressure is body:atm:altitudepressure(testAltitude).
-
-local originalThrust is 0.
-local originalMassFlow is 0.
-
-for eng in ship:engines {
-local thrust is eng:possiblethrustat(pressure).
-local isp is eng:ispat(pressure).
-
-set originalThrust to originalThrust + thrust.
-set originalMassFlow to originalMassFlow + thrust / (isp * constant:g0).
-
-}
-
-local originalIsp is originalThrust / (originalMassFlow * constant:g0).
-local originalAeroforce is addons:far:aeroforceat(
-testAltitude,
--facing:forevector * testSpeed
-):mag.
-
 print "ISP".
-print "  Original: " + originalIsp.
+print "  Original: " + liveProfile:ispat(testAltitude).
 print "  Profile: " + profile:ispat(testAltitude).
 print "".
 
 print "Thrust".
-print "  Original: " + originalThrust.
+print "  Original: " + liveProfile:thrustat(testAltitude).
 print "  Profile: " + profile:thrustat(testAltitude).
 print "".
 
 print "Mass flow".
-print "  Original: " + originalMassFlow.
-print "  Profile: " + profile:massflowat(testAltitude).
+print "  Original: " + liveProfile:massflow().
+print "  Profile: " + profile:massflow().
 print "".
 
 print "Aeroforce".
-print "  Original: " + originalAeroforce.
-print "  Profile: " + profile:aeroforceat(testAltitude, testSpeed).
+print "  Original: " + liveProfile:retrogradeAeroforceat(testAltitude, testSpeed).
+print "  Profile: " + profile:retrogradeAeroforceat(testAltitude, testSpeed).
 print "".
 
 print "Mass".
-print "  Original dry: " + ship:drymass.
+print "  Original dry: " + liveProfile:drymass().
 print "  Profile dry: " + profile:drymass().
-print "  Original wet: " + ship:wetmass.
+print "  Original wet: " + liveProfile:wetmass().
 print "  Profile wet: " + profile:wetmass().

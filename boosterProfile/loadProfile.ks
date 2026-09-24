@@ -10,8 +10,8 @@ function loadboosterprofile {
     local heightFromOriginToBottom is profile["heightFromOriginToBottom"].
     local ispTable is profile["ispTable"].
     local thrustTable is profile["thrustTable"].
-    local massFlowTable is profile["massFlowTable"].
-    local aeroforceTable is profile["aeroforceTable"].
+    local massFlow is profile["massFlow"].
+    local aeroforceTable is profile["retrogradeAeroforceTable"].
 
     function buildSegments {
         parameter steps.
@@ -151,6 +151,7 @@ function loadboosterprofile {
 
         local altitudeFraction is (a - lowerAltitude) / (upperAltitude - lowerAltitude).
 
+        print lowerAltitudeValue + "  " + upperAltitudeValue .
         return lowerAltitudeValue
             + (upperAltitudeValue - lowerAltitudeValue) * altitudeFraction.
     }.
@@ -170,12 +171,11 @@ function loadboosterprofile {
             return interpolateAltitude(thrustTable, a).
         },
 
-        "massflowat", {
-            parameter a.
-            return interpolateAltitude(massFlowTable, a).
+        "massflow", {
+            return massFlow.
         },
 
-        "aeroforceat", {
+        "retrogradeAeroforceat", {
             parameter a, speed.
             return interpolateAeroforce(a, speed).
         }
