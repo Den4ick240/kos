@@ -1,8 +1,11 @@
+runoncepath(scriptpath():parent + "/getLiveProfile").
 local procTag is core:tag.
 
 if procTag = "" {
     set procTag to "test".
 }
+
+local liveProfile is getLiveProfile().
 
 local speedSteps is list(
     25, 400,
@@ -25,56 +28,43 @@ if exists(jsonPath) {
     deletepath(jsonPath).
 }
 
-local dryMass is ship:drymass.
-local wetMass is ship:wetmass.
+local dryMass is liveProfile:dryMass().
+local wetMass is liveProfile:wetMass().
+local massFlow is liveProfile:massflow.
 
 if not gear {
     set gear to true.
     wait 5.
 }
 
-local heightFromOriginToBottom is vdot(-facing:forevector, ship:bounds:furthestcorner(facing:forevector) - ship:position).
+local heightFromOriginToBottom is liveProfile:heightFromOriginToBottom().
 
 set gear to false.
 wait 5.
 
-local usedEngines is ship:engines.
-
 local ispTable is list().
 local thrustTable is list().
-local massFlowTable is list().
-local aeroforceTable is list().
+local retrogradeAeroforceTable is list().
 local a is 0.
 local aStepIndex is 0.
 until a > body:atm:height {
-    local pressure is body:atm:altitudepressure(a).
-    local totalThrust is 0.
-    local totalMassFlow is 0.
-    for eng in usedEngines {
-       local thrust is eng:possiblethrustat(pressure). 
-       local isp is eng:ispat(pressure).
-       set totalThrust to totalThrust + thrust.
-       set totalMassFlow to totalMassFlow + thrust / (isp * constant:g0).
-    }
-    local totalIsp is totalThrust / (totalMassFlow * constant:g0).
 
-    ispTable:add(totalIsp).
-    thrustTable:add(totalThrust).
-    massFlowTable:add(totalMassFlow).
+    ispTable:add(liveProfile:ispat(a)).
+    thrustTable:add(liveProfile:thrustat(a)).
 
     local aeroforceRow is list().
     local speedStepIndex is 0.
 
     local aeroforceSpeed is 0.
     until aeroforceSpeed > 1500 {
-        aeroforceRow:add(round(addons:far:aeroforceat(a, -facing:forevector * aeroforceSpeed):mag, 4)).
+        aeroforceRow:add(liveProfile:retrogradeAeroforceat(a, aeroforceSpeed)).
         if  speedStepIndex + 2 < speedSteps:length and aeroforceSpeed >= speedSteps[speedStepIndex + 1] {
             set speedStepIndex to speedStepIndex + 2.
         }
         set aeroforceSpeed to aeroforceSpeed + speedSteps[speedStepIndex].
     }
 
-    aeroforceTable:add(aeroforceRow).
+    retrogradeAeroforceTable:add(aeroforceRow).
 
     if aStepIndex + 2 < altitudeSteps:length and a >= altitudeSteps[aStepIndex + 1] {
         set aStepIndex to aStepIndex + 2.
@@ -90,10 +80,10 @@ local stageProfile is lex(
     "dryMass", dryMass,
     "wetMass", wetMass,
     "heightFromOriginToBottom", heightFromOriginToBottom,
+    "massFlow", massFlow,
     "ispTable", ispTable,
     "thrustTable", thrustTable,
-    "massFlowTable", massFlowTable,
-    "aeroforceTable", aeroforceTable
+    "retrogradeAeroforceTable", retrogradeAeroforceTable
 ).
 
 writejson(stageProfile, jsonPath).
