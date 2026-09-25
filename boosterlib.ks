@@ -1,4 +1,7 @@
 runoncepath("0:/den4ick240kos/airbrakeForce.ks").
+runoncepath("0:/den4ick240kos/boosterProfile/integrate.ks").
+runoncepath("0:/den4ick240kos/boosterProfile/getLiveProfile.ks").
+local liveProfile is getLiveProfile().
 function getHeightFromOriginToBottom {
     // Physical distance (m) from the vessel coordinate origin (CoM) down to the
     // bottom-most point of the craft, measured along the ship's own fore/aft axis.
@@ -152,7 +155,9 @@ function integrateTrajectory {
     parameter targetAltitude is 0. // altitude above sea level (m) where the trajectory "hits"; used instead of terrain height
     parameter energyStep is 80000.  // target |ΔE| per step, (m/s)^2 - tune this
     parameter dtMin is 0.1.
-    parameter dtMax is 8.
+    parameter dtMax is 12.
+
+    return integrateLanding(liveProfile, targetAltitude, simulationVelocity). 
 
     local hitTime is time:seconds.
     local startUT is time:seconds.
@@ -340,6 +345,8 @@ function integrateTrajectory {
     //print "Burn alt adjusted to: " + burnAlt + " end mass " + currentMass at (0, 23).
 
     local impactGeo is geoAtSimTime(position, hitTime).
+
+    print round(oldBurnAlt) + " " + round(hitTime - time:seconds) at (0, 0).
     return lexicon(
         "impactPosition", position,
         "impactGeo", impactGeo,

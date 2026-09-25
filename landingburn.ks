@@ -11,7 +11,6 @@ set lbVelKI to 0.00.
 set lbVelKD to 1.5.
 set lbMaxHSpeed to 10.
 set lbMaxTilt to 15.
-set lbKillWindow to 0.1.
 
 local distDownrangePID is PIDLoop(lbDistKP, lbDistKI, lbDistKD, -lbMaxHSpeed, lbMaxHSpeed).
 local distCrossrangePID is PIDLoop(lbDistKP, lbDistKI, lbDistKD, -lbMaxHSpeed, lbMaxHSpeed).
@@ -64,7 +63,7 @@ function getTiltSteering {
         set timeToGo to max(ship:bounds:bottomaltradar, 0) / (-ship:verticalspeed).
         if timeToGo > 99 { set timeToGo to 99. }
     }
-    local killFactor is timeToGo / lbKillWindow.
+    local killFactor is (timeToGo - 0.5).
     if killFactor > 1 { set killFactor to 1. }
     if killFactor < 0 { set killFactor to 0. }
 
