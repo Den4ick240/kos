@@ -1,5 +1,6 @@
 runoncepath("0:/den4ick240kos/airbrakeForce.ks").
-runoncepath("0:/den4ick240kos/boosterProfile/integrate.ks").
+runoncepath("0:/den4ick240kos/prediction/integrate.ks").
+runoncepath("0:/den4ick240kos/prediction/integrateLanding.ks").
 runoncepath("0:/den4ick240kos/boosterProfile/getLiveProfile.ks").
 local liveProfile is getLiveProfile().
 function getHeightFromOriginToBottom {
