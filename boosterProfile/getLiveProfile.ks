@@ -1,5 +1,5 @@
 function getHeightFromOriginToBottom {
-    return vdot(-facing:forevector, ship:bounds:furthestcorner(facing:forevector) - ship:position).
+    return vdot(facing:forevector, ship:bounds:furthestcorner(facing:forevector) - ship:position).
 }
 
 function getMassFlow {
