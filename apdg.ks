@@ -2,6 +2,7 @@ runoncepath("0:/den4ick240kos/boosterlib.ks").
 parameter landingSite.
 parameter hitTime.
 
+        //RUNPATH("1:/den4ick240kos/landingburn.ks", landingSite).
 local startPosition is ship:position - ship:body:position.
 local g is ship:body:mu / startPosition:sqrmagnitude.
 local touchdownThrust is availablethrust.
@@ -54,9 +55,21 @@ function getAcceleration {
 }
 
 
+local omega is ship:body:angularvel.
+
 until ship:status = "LANDED" {
     local startPosition is ship:position - ship:body:position.
+    local surfaceVelocity is ship:velocity:surface.
     local gAcc is -startPosition:normalized * ship:body:mu / startPosition:sqrmagnitude.
+
+    // The guidance polynomial below models an inertial frame, but the velocity
+    // and target are surface-relative (rotating frame). Cancel the fictitious
+    // Coriolis and centrifugal accelerations so the vessel follows the model:
+    //   r''_rel = thrust + g - 2*omega x v_rel - omega x (omega x r)
+    local fictitiousAcc is (
+        -2 * vcrs(omega, surfaceVelocity)
+        - vcrs(omega, vcrs(omega, startPosition))
+    ).
 
     local offsetLandingSitePosition is landingSite:altitudeposition(landingSite:terrainheight + getHeightFromOriginToBottom() + switchOffset). // todo offset by ship height
     local vsTargetPosition is ship:position - offsetLandingSitePosition.
@@ -70,16 +83,16 @@ until ship:status = "LANDED" {
     if ttg < 5 {
         set gear to true.
     }
-    if ttg < 2 or height < 20 {
+    if ttg < touchdownTime or height < 20 {
         set gear to true.
         RUNPATH("1:/den4ick240kos/landingburn.ks", landingSite).
         break.
     }
 
-    local state is getState(time:seconds, vsTargetPosition, ship:velocity:surface, gAcc, ttg).
+    local state is getState(time:seconds, vsTargetPosition, surfaceVelocity, gAcc, ttg).
 
     
-    local acceleration is state["a"].
+    local acceleration is state["a"] - fictitiousAcc.
     lock steering to lookdirup(acceleration, ship:facing:topvector).
     lock throttle to max(0.1, min(1, 
         mass * acceleration:mag / availablethrust
