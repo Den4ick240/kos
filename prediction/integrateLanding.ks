@@ -35,11 +35,11 @@ function integrateLanding {
 
         local a is pos:mag - bodyR.
         local surfVel is vel - vcrs(omega, pos).
-        local aeroForce is profile:retrogradeAeroforceat(a, -surfVel:mag) * -surfVel:normalized.
+        local aeroForce is profile:retrogradeAeroforceat(a, surfVel:mag) * -surfVel:normalized.
         local acc is aeroForce / m.
 
         if throttl > 0 {
-            set acc to acc * 0.85 - surfVel:normalized * profile:thrustat(a) * throttl / m.
+            set acc to acc - surfVel:normalized * profile:thrustat(a) * throttl / m.
         }
         set acc to acc - pos:normalized * mu / pos:sqrmagnitude.
 

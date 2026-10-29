@@ -52,6 +52,10 @@ function surfaceSignNow {
 function surfaceFlipCtrlDflct {
     local n is 0.
     for m in surfModules {
+        if m:hasfield("Std. Ctrl") {
+            m:setfield("Std. Ctrl", true).
+        }
+        wait 0.1.
         local f is surfaceDeflectionFieldName(m).
         if f <> "" {
             m:setfield(f, -m:getfield(f)).

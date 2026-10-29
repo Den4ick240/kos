@@ -66,6 +66,7 @@ until ship:status = "LANDED" {
     //set ttg to max(0.1, ttg).
     //print ttg.
     local ttg is hitTime - time:seconds .
+    print ttg.
     if ttg < 5 {
         set gear to true.
     }

@@ -8,11 +8,12 @@ function build1dTable {
     local i is 1.
     until a > end {
         table:add(fun(a)).
-        if i + 2 < steps:length and a > steps[i + 1] {
+        if i + 2 < steps:length and a >= steps[i + 1] {
             set i to i + 2.
         }
         set a to a + steps[i].
     }
+    return table.
 }
 
 function build2dTable {
@@ -26,7 +27,7 @@ function build2dTable {
                     parameter b.
                     return fun(a, b).
                 }
-            )
+            ).
         }
-    )
+    ).
 }

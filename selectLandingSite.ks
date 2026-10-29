@@ -7,8 +7,9 @@ function selectLandingSite {
     set impact to addons:tr:impactpos.
 
     set landingNames to list(
-        "KSC",
-        "Island Airfield"
+    "jop"
+        //"KSC"
+     //   "Island Airfield"
     ).
 
     set bestName to landingNames[0].

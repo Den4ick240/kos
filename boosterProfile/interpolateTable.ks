@@ -6,7 +6,7 @@ function buildSegments {
     local segments is list().
 
     local stepIndex is 0.
-    local startIndex is 1.
+    local startIndex is 0.
     local startVal is steps[0].
 
     until stepIndex + 1 >= steps:length {
@@ -48,14 +48,14 @@ function getPair {
     parameter value, segments, maxIndex.
 
     if value <= segments[0]:startVal {
-        return list(steps[0], segments[0]:startVal , steps[0], segments[0]:startVal ).
+        return list(0, 0, segments[0]:startVal, segments[0]:startVal).
     }
 
     local segLen is segments:length.
 
     local seg is segments[0].
 
-    from { local i is 0. } until false step { set i to i + 1 } do {
+    from { local i is 0. } until false step { set i to i + 1. } do {
         if i >= segLen - 1 or value < segments[i]:endVal {
             set seg to segments[i].
             break.
@@ -79,7 +79,7 @@ function getPair {
 function interpolate1dTable {
     parameter table, a, segments.
 
-    local pair is getPair(a, segments, table:lenght - 1).
+    local pair is getPair(a, segments, table:length - 1).
     
     local lowerIndex is pair[0].
     local upperIndex is pair[1].
@@ -119,7 +119,7 @@ function interpolate2dTable {
     local bFraction is 0.
 
     if upperBIndex <> lowerBIndex {
-        set speedFraction to (b - lowerB) / (upperB - lowerB).
+        set bFraction to (b - lowerB) / (upperB - lowerB).
     }
 
     local lowerAValue is lalb + (laub - lalb) * bFraction.

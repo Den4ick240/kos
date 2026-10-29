@@ -1,10 +1,12 @@
 runoncepath("0:/den4ick240kos/prediction/boostback").
 runoncepath("0:/den4ick240kos/boosterProfile/getLiveProfile").
+runoncepath("0:/den4ick240kos/boosterProfile/loadprofile").
 runoncepath("0:/den4ick240kos/prediction/geo").
 
 parameter landingSite.
 
-local profile is getLiveProfile().
+local profile is loadboosterprofile().
+//local profile is getLiveProfile().
 
 initializeBoostbackStateInitialTarget(landingSite:position - body:position).
 

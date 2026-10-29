@@ -4,8 +4,8 @@ local profilePath is "0:/bosterprofiles/test.json".
 local profile is loadboosterprofile(profilePath).
 local liveProfile is getLiveProfile().
 
-local testAltitude is 1510.
-local testSpeed is 1260.
+local testAltitude is 1013.
+local testSpeed is 913.
 
 print "=== PROFILE TEST ===".
 print "Altitude: " + testAltitude.
@@ -28,8 +28,13 @@ print "  Profile: " + profile:massflow().
 print "".
 
 print "Aeroforce".
-print "  Original: " + liveProfile:retrogradeAeroforceat(testAltitude, testSpeed).
-print "  Profile: " + profile:retrogradeAeroforceat(testAltitude, testSpeed).
+print "  Original: " + liveProfile:retrogradeAeroforceat(testAltitude+ 5000, testSpeed).
+print "  Profile: " + profile:retrogradeAeroforceat(testAltitude+5000, testSpeed).
+print "".
+
+print "Aeroforce".
+print "  Original: " + liveProfile:retrogradeAeroforceat(testAltitude, testSpeed-500).
+print "  Profile: " + profile:retrogradeAeroforceat(testAltitude, testSpeed-500).
 print "".
 
 print "Mass".

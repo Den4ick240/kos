@@ -2,7 +2,9 @@ runoncepath("0:/den4ick240kos/airbrakeForce.ks").
 runoncepath("0:/den4ick240kos/prediction/integrate.ks").
 runoncepath("0:/den4ick240kos/prediction/integrateLanding.ks").
 runoncepath("0:/den4ick240kos/boosterProfile/getLiveProfile.ks").
-local liveProfile is getLiveProfile().
+runoncepath("0:/den4ick240kos/boosterProfile/loadprofile.ks").
+//local liveProfile is getLiveProfile().
+local liveProfile is loadboosterprofile().
 function getHeightFromOriginToBottom {
     // Physical distance (m) from the vessel coordinate origin (CoM) down to the
     // bottom-most point of the craft, measured along the ship's own fore/aft axis.
