@@ -39,7 +39,7 @@ function integrateLanding {
         local acc is aeroForce / m.
 
         if throttl > 0 {
-            set acc to acc - surfVel:normalized * profile:thrustat(a) * throttl / m.
+            set acc to acc * 0.9 - surfVel:normalized * profile:thrustat(a) * throttl / m.
         }
         set acc to acc - pos:normalized * mu / pos:sqrmagnitude.
 
@@ -83,16 +83,17 @@ function integrateLanding {
             local updatedState is advanceRk4(pos, vel, acc, getAcc@, dt).
             set pos to updatedState:pos.
             set vel to updatedState:vel.
-            if a <= simulatedLandingBurnStartAltitude {
-                set throttl to 0.85.
-            }
         }
 
         set a to pos:mag - bodyR.
+
+        if throttl = 0 and a <= simulatedLandingBurnStartAltitude {
+            set throttl to 0.8.
+        }
         set timeToHit to timeToHit + dt.
     }
 
-    local targetStoppingAltitude is targetAltitude + profile:heightFromOriginToBottom() + 15.
+    local targetStoppingAltitude is targetAltitude + profile:heightFromOriginToBottom().
 
     set simulatedLandingBurnStartAltitude to simulatedLandingBurnStartAltitude - (a - targetStoppingAltitude) * 0.2.
 
