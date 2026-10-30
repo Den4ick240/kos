@@ -6,7 +6,7 @@ if lbSite = 0 {
 
 set lbDistKP to 0.8.
 set lbDistKI to 0.0.
-set lbDistKD to 0.4.
+set lbDistKD to 0.8.
 set lbVelKP to 1.0.
 set lbVelKI to 0.0.
 set lbVelKD to 0.5.
@@ -22,14 +22,32 @@ set distCrossrangePID:setpoint to 0.
 set velDownrangePID:setpoint to 0.
 set velCrossrangePID:setpoint to 0.
 
+local lbAscendingArrest is false.
+local lbMinSinkRate is 3.0.
+local lbMaxSinkRate is 40.0.
+local lbSinkRatePerMeter is 0.2.
+
 function getThrottle {
     local bodyPos is ship:body:position.
     local g is ship:body:mu / (ship:position - ship:body:position):sqrmagnitude.
     local facingDotUp is vdot(ship:facing:forevector, ship:up:vector).
 
-    local desiredAcc is 0.
     local altRemaining is max(ship:bounds:bottomaltradar, 1).
-    local desiredAcc is (-abs(verticalspeed) * verticalspeed * 0.5 / altRemaining + g) / facingDotUp.
+    local sinkRate is min(lbMaxSinkRate, max(lbMinSinkRate, altRemaining * lbSinkRatePerMeter)).
+    local desiredAcc is 0.
+
+    if verticalspeed > 0 {
+        set lbAscendingArrest to true.
+    }
+
+    if lbAscendingArrest and verticalspeed > -sinkRate {
+        set desiredAcc to 0.
+    } else {
+        set lbAscendingArrest to false.
+        set desiredAcc to -abs(verticalspeed) * verticalspeed * 0.5 / altRemaining + g.
+    }
+    set desiredAcc to desiredAcc / facingDotUp.
+
     return max(
         0,
         min(
