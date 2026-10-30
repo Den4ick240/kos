@@ -1,13 +1,27 @@
 runoncepath("0:/den4ick240kos/boosterlib.ks").
+runoncepath("0:/den4ick240kos/landingburn.ks").
+
+function runApdg {
 parameter landingSite.
 parameter hitTime.
 
-        //RUNPATH("1:/den4ick240kos/landingburn.ks", landingSite).
+set steeringmanager:yawtorquefactor to 1.
+set steeringmanager:pitchtorquefactor to 1.
+set steeringmanager:yawts to 0.4.
+set steeringmanager:pitchts to 0.4.
+set steeringmanager:maxstoppingtime to 0.5.
+SET STEERINGMANAGER:PITCHPID:KP TO STEERINGMANAGER:PITCHPID:KP * 2.0.
+SET STEERINGMANAGER:YAWPID:KP TO STEERINGMANAGER:YAWPID:KP * 2.0.
+SET STEERINGMANAGER:PITCHPID:Kd TO STEERINGMANAGER:PITCHPID:Kd / 2.0.
+SET STEERINGMANAGER:YAWPID:Kd TO STEERINGMANAGER:YAWPID:Kd / 2.0.
+
 local startPosition is ship:position - ship:body:position.
 local g is ship:body:mu / startPosition:sqrmagnitude.
 local touchdownThrust is availablethrust.
-local touchdownAcceleration is touchdownThrust * 0.5 / mass - g.
-local touchdownTime is 3.
+local terminalThrustAccel is touchdownThrust * 0.8 / mass.
+local touchdownAcceleration is terminalThrustAccel - g.
+local touchdownTime is 0.15.
+local steeringLeadTime is 0.5.
 local switchVelocity is touchdownTime * touchdownAcceleration.
 local switchOffset is touchdownTime * switchVelocity / 2.
 
@@ -26,16 +40,17 @@ local lastState is lexicon(
 
 function getState {
     parameter startTime, startPosition, startVelocity, gravityVec, timeToGo.
-    local af is -gravityVec * 1.1.
+    local af is -gravityVec:normalized * terminalThrustAccel.
     local vf is gravityVec:normalized * switchVelocity.
     local ttgsq is timeToGo * timeToGo.
     local ttgcb is ttgsq * timeToGo.
     local ttg4 is ttgsq * ttgsq.
+    local gPlusAf is gravityVec + af.
 
 
     local a is af - 6 * (vf + startVelocity) / timeToGo - 12 * startPosition / ttgsq.
-    local b is 0.6 * gravityVec / timeToGo + (30 * vf + 18 * startVelocity) / ttgsq + 48 * startPosition / ttgcb.
-    local c is -0.6 * gravityVec / ttgsq - (24 * vf + 12 * startVelocity) / ttgcb - 36 * startPosition / ttg4.
+    local b is -6 * gPlusAf / timeToGo + (30 * vf + 18 * startVelocity) / ttgsq + 48 * startPosition / ttgcb.
+    local c is 6 * gPlusAf / ttgsq - (24 * vf + 12 * startVelocity) / ttgcb - 36 * startPosition / ttg4.
 
     return lexicon(
         "startTime", startTime,
@@ -57,15 +72,21 @@ function getAcceleration {
 
 local omega is ship:body:angularvel.
 
+// Persistent arrow showing the target APDG thrust direction.
+local apdgArrowLength is 100.
+local apdgArrow is vecdraw(
+    {return ship:position.},
+    v(0, 0, 0),
+    rgb(0, 1, 0),
+    "apdg",
+    1.0, true, 0.2, true, true
+).
+
 until ship:status = "LANDED" {
     local startPosition is ship:position - ship:body:position.
     local surfaceVelocity is ship:velocity:surface.
     local gAcc is -startPosition:normalized * ship:body:mu / startPosition:sqrmagnitude.
 
-    // The guidance polynomial below models an inertial frame, but the velocity
-    // and target are surface-relative (rotating frame). Cancel the fictitious
-    // Coriolis and centrifugal accelerations so the vessel follows the model:
-    //   r''_rel = thrust + g - 2*omega x v_rel - omega x (omega x r)
     local fictitiousAcc is (
         -2 * vcrs(omega, surfaceVelocity)
         - vcrs(omega, vcrs(omega, startPosition))
@@ -79,23 +100,29 @@ until ship:status = "LANDED" {
     //set ttg to max(0.1, ttg).
     //print ttg.
     local ttg is hitTime - time:seconds .
-    print ttg.
+    print ttg at (0, 2).
     if ttg < 5 {
         set gear to true.
     }
     if ttg < touchdownTime or height < 20 {
         set gear to true.
-        RUNPATH("1:/den4ick240kos/landingburn.ks", landingSite).
+        set apdgArrow:show to false.
+        runLandingBurn(landingSite).
         break.
     }
 
     local state is getState(time:seconds, vsTargetPosition, surfaceVelocity, gAcc, ttg).
 
     
-    local acceleration is state["a"] - fictitiousAcc.
-    lock steering to lookdirup(acceleration, ship:facing:topvector).
+    local currentAcceleration is state["a"] - fictitiousAcc.
+    local futureAcceleration is getAcceleration(state, steeringLeadTime) - fictitiousAcc.
+    local apdgDir is futureAcceleration:normalized.
+    set apdgArrow:vector to apdgDir * apdgArrowLength.
+    set apdgArrow:label to "apdg " + round(futureAcceleration:mag, 1) + " m/s2".
+    lock steering to lookdirup(futureAcceleration, ship:facing:topvector).
     lock throttle to max(0.1, min(1, 
-        mass * acceleration:mag / availablethrust
+        mass * currentAcceleration:mag / availablethrust
     )).
     wait 0.
+}
 }

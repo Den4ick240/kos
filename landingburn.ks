@@ -1,3 +1,4 @@
+function runLandingBurn {
 parameter lbSite is 0.
 if lbSite = 0 {
     set lbSite to guidSite.
@@ -103,3 +104,4 @@ until ship:status = "LANDED" {
 
 lock throttle to 0.
 wait 3.
+}

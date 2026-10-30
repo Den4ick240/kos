@@ -2,9 +2,10 @@ runoncepath("0:/den4ick240kos/boosterlib.ks").
 runoncepath("0:/den4ick240kos/guidance.ks").
 runoncepath("0:/den4ick240kos/holdTorque.ks").
 runoncepath("0:/den4ick240kos/surfaces.ks").
+runoncepath("0:/den4ick240kos/apdg.ks").
 
-COPYPATH("0:/den4ick240kos/landingburn.ks", "1:/den4ick240kos/landingburn.ks").
-COPYPATH("0:/den4ick240kos/apdg.ks", "1:/den4ick240kos/apdg.ks").
+//COPYPATH("0:/den4ick240kos/landingburn.ks", "1:/landingburn.ks").
+//COPYPATH("0:/den4ick240kos/apdg.ks", "1:/apdg.ks").
 
 parameter landingSite.
 
@@ -61,4 +62,6 @@ until not isAerodescent {
     wait 0.
 }
 
-RUNPATH("1:/den4ick240kos/apdg.ks", landingSite, hitTime).
+set steeringmanager:yawtorquefactor to 1.
+set steeringmanager:pitchtorquefactor to 1.
+runApdg(landingSite, hitTime).
