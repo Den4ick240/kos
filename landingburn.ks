@@ -4,13 +4,13 @@ if lbSite = 0 {
     set lbSite to guidSite.
 }
 
-set lbDistKP to 0.85.
+set lbDistKP to 0.8.
 set lbDistKI to 0.0.
 set lbDistKD to 0.4.
 set lbVelKP to 1.0.
-set lbVelKI to 0.00.
-set lbVelKD to 1.5.
-set lbMaxHSpeed to 10.
+set lbVelKI to 0.0.
+set lbVelKD to 0.5.
+set lbMaxHSpeed to 15.
 set lbMaxTilt to 15.
 
 local distDownrangePID is PIDLoop(lbDistKP, lbDistKI, lbDistKD, -lbMaxHSpeed, lbMaxHSpeed).
