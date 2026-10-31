@@ -20,7 +20,7 @@ local g is ship:body:mu / startPosition:sqrmagnitude.
 local touchdownThrust is availablethrust.
 local terminalThrustAccel is touchdownThrust * 0.8 / mass.
 local touchdownAcceleration is terminalThrustAccel - g.
-local touchdownTime is 0.15.
+local touchdownTime is 0.1.
 local steeringLeadTime is 0.5.
 local switchVelocity is touchdownTime * touchdownAcceleration.
 local switchOffset is touchdownTime * switchVelocity / 2.

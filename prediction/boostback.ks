@@ -112,7 +112,7 @@ function optimizeBoostbackState {
         "flightPathAngle", flightPathAngle,
         "requiredVelocity", requiredVelocity,
         "requiredDeltaV", requiredDeltaV,
-        "massAfterBurn", massAfterBurn,
+        "massAfterBurn", landing:mass,
         "landing", landing
     ).
 }

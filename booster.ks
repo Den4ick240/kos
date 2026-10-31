@@ -6,11 +6,13 @@ SET SHIP:CONTROL:NEUTRALIZE to True.
 SET CONFIG:IPU TO 2000.
 
 local landingSite is WAYPOINT("jop"):geoposition.
-//runpath("0:/den4ick240kos/booster/separateForLanding.ks", landingSite, loadboosterprofile("0:/bosterprofiles/test.json")).
 
-clearscreen.
-print "Awaiting separation".
-awaitSeparation().
+if ship:status = "LANDED" {    
+    runpath("0:/den4ick240kos/booster/separateForLanding.ks", landingSite, loadboosterprofile("0:/bosterprofiles/test.json")).
+    clearscreen.
+    print "Awaiting separation".
+    awaitSeparation().
+}
 
 //clearscreen.
 //print "Selecting landing site".

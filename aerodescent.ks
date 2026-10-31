@@ -9,6 +9,8 @@ runoncepath("0:/den4ick240kos/apdg.ks").
 
 parameter landingSite.
 
+lock throttle to 0.
+
 local maxRate is 0.6.
 local rateKp is 0.025.
 local rateKd is 0.01.
