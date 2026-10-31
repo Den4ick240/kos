@@ -1,6 +1,5 @@
 runoncepath("0:/den4ick240kos/boosterlib.ks").
 runoncepath("0:/den4ick240kos/guidance.ks").
-runoncepath("0:/den4ick240kos/holdTorque.ks").
 runoncepath("0:/den4ick240kos/surfaces.ks").
 runoncepath("0:/den4ick240kos/apdg.ks").
 

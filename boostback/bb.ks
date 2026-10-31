@@ -10,10 +10,6 @@ local profile is loadboosterprofile().
 
 initializeBoostbackStateInitialTarget(landingSite:position - body:position).
 
-//optimizeBoostbackState(profile, landingSite:position - body:position).
-//optimizeBoostbackState(profile, landingSite:position - body:position).
-//optimizeBoostbackState(profile, landingSite:position - body:position).
-
 set requiredVelocity to optimizeBoostbackState(profile, landingSite:position - body:position):requiredVelocity.
 
 lock requiredDeltaVLock to requiredVelocity - ship:velocity:orbit.
