@@ -1,5 +1,22 @@
-runoncepath("0:/den4ick240kos/boosterlib.ks").
 runoncepath("0:/den4ick240kos/landingburn.ks").
+
+function getHeightFromOriginToBottom {
+    // Physical distance (m) from the vessel coordinate origin (CoM) down to the
+    // bottom-most point of the craft, measured along the ship's own fore/aft axis.
+    // Independent of ship orientation: it's the length of the craft below the CoM,
+    // so it stays constant whether the ship is vertical or pitched over.
+    local fore is ship:facing:forevector.
+    local aftRay is -fore.
+    local farthest is 0.
+    list parts in _allParts.
+    for p in _allParts {
+        local b is p:bounds.
+        local corner is b:furthestcorner(aftRay).
+        local d is vdot(corner, fore).
+        if d < farthest { set farthest to d. }
+    }
+    return -farthest.
+}
 
 function runApdg {
 parameter landingSite.
@@ -73,14 +90,14 @@ function getAcceleration {
 local omega is ship:body:angularvel.
 
 // Persistent arrow showing the target APDG thrust direction.
-local apdgArrowLength is 100.
-local apdgArrow is vecdraw(
-    {return ship:position.},
-    v(0, 0, 0),
-    rgb(0, 1, 0),
-    "apdg",
-    1.0, true, 0.2, true, true
-).
+//local apdgArrowLength is 100.
+//local apdgArrow is vecdraw(
+//    {return ship:position.},
+//    v(0, 0, 0),
+//    rgb(0, 1, 0),
+//    "apdg",
+//    1.0, true, 0.2, true, true
+//).
 
 until ship:status = "LANDED" {
     local startPosition is ship:position - ship:body:position.
@@ -106,7 +123,7 @@ until ship:status = "LANDED" {
     }
     if ttg < touchdownTime or height < 20 {
         set gear to true.
-        set apdgArrow:show to false.
+        //set apdgArrow:show to false.
         runLandingBurn(landingSite).
         break.
     }
@@ -116,9 +133,9 @@ until ship:status = "LANDED" {
     
     local currentAcceleration is state["a"] - fictitiousAcc.
     local futureAcceleration is getAcceleration(state, steeringLeadTime) - fictitiousAcc.
-    local apdgDir is futureAcceleration:normalized.
-    set apdgArrow:vector to apdgDir * apdgArrowLength.
-    set apdgArrow:label to "apdg " + round(futureAcceleration:mag, 1) + " m/s2".
+    //local apdgDir is futureAcceleration:normalized.
+    //set apdgArrow:vector to apdgDir * apdgArrowLength.
+    //set apdgArrow:label to "apdg " + round(futureAcceleration:mag, 1) + " m/s2".
     lock steering to lookdirup(futureAcceleration, ship:facing:topvector).
     lock throttle to max(0.1, min(1, 
         mass * currentAcceleration:mag / availablethrust

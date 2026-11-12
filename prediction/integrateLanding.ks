@@ -1,14 +1,17 @@
 runoncepath(scriptpath():parent + "/integrate").
 runoncepath(scriptpath():parent + "/geo").
+runoncepath(scriptpath():parent:parent + "/boosterProfile/loadProfile").
 
 global simulatedLandingBurnStartAltitude is 8500.
 
+local liveProfile is loadboosterprofile().
+
 function integrateLanding {
-    parameter profile.
     parameter targetAltitude is 0.
     parameter startVelocity is ship:velocity:orbit.
     parameter startMass is ship:mass.
     parameter startPosition is ship:position - body:position.
+    parameter profile is liveProfile.
     parameter energyStep is 80000.  // target |ΔE| per step, (m/s)^2 - tune this
     parameter dtMin is 0.1.
     parameter dtMax is 8.

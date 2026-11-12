@@ -1,17 +1,13 @@
 runoncepath(scriptpath():parent + "/getLiveProfile").
 runoncepath(scriptpath():parent + "/buildTable").
-local procTag is core:tag.
+runoncepath(scriptpath():parent + "/name").
 
-if procTag = "" {
-    set procTag to "test".
-}
 
 local liveProfile is getLiveProfile().
 
 local speedSteps is list(
     0,
     10, 400,
-    25, 1200,
     50, 1500
 ).
 
@@ -23,9 +19,7 @@ local altitudeSteps is list(
     5000, 70000
 ).
 
-print "CPU part tag: " + procTag.
-
-local jsonPath is "0:/bosterprofiles/" + procTag + ".json".
+local jsonPath is boosterProfileName().
 
 if exists(jsonPath) {
     deletepath(jsonPath).

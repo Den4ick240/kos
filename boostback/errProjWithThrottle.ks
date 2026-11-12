@@ -1,4 +1,4 @@
-runoncepath("0:/den4ick240kos/boosterlib.ks").
+runoncepath("0:/den4ick240kos/prediction/integrateLanding.ks").
 parameter landingSite.
 parameter pitchAngle to 0.           // degrees above horizontal for the commanded thrust vector; 0 = pure horizontal
 parameter burning to false.          // start already burning (skips the heading-gate wait, e.g. when resuming a burn)
@@ -24,9 +24,9 @@ if burning {
 
 until false {
     // Predict where we'd land if we cut thrust right now (current velocity).
-    local hitData is integrateTrajectory(
-        ship:velocity:orbit,
-        landingSite:terrainheight
+    local hitData is integrateLanding(
+        landingSite:terrainheight,
+        ship:velocity:orbit
     ).
     local hitGeo is hitData["impactGeo"].
 

@@ -15,8 +15,10 @@
 // Diagnostics (globals):
 //   guidDnErr, guidCrErr (m), guidSteerAngle (deg), guidDnOut, guidCrOut (deg)
 
-set gKp to 0.5.         // deg of steer per meter of horizontal error
-set gKd to 0.01.         // deg per (m/s) of error closing rate
+runoncepath("0:/den4ick240kos/prediction/integrateLanding.ks").
+
+set gKp to 0.3.         // deg of steer per meter of horizontal error
+set gKd to 0.1.         // deg per (m/s) of error closing rate
 set gSteerSign to 1.0.   // set to -1 if the aero force pushes the wrong way
 set gMaxSteer to 60.     // PID output clamp (deg off retrograde per axis)
 set gErrorFilter to 0.6. // 0..1 lowpass on the measured error
@@ -47,10 +49,9 @@ function guidanceInit {
 
 function guidanceUpdate {
     // 1. Integrate the trajectory to predict where we'd hit right now.
-    local hitData is integrateTrajectory(
-        ship:velocity:orbit,
+    local hitData is integrateLanding(
         guidSite:terrainheight,
-        80000, 0.02, 4
+        ship:velocity:orbit
     ).
     local hitGeo is hitData["impactGeo"].
     set guidBurnAltitude to hitData["burnAltitude"].

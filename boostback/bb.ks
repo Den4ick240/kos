@@ -3,7 +3,11 @@ runoncepath("0:/den4ick240kos/boosterProfile/getLiveProfile").
 runoncepath("0:/den4ick240kos/boosterProfile/loadprofile").
 runoncepath("0:/den4ick240kos/prediction/geo").
 
+function boostbackGuidance {
 parameter landingSite.
+
+steeringmanager:resettodefault().
+set steeringmanager:maxstoppingtime to 1.
 
 local profile is loadboosterprofile().
 //local profile is getLiveProfile().
@@ -37,8 +41,9 @@ lock baseThrottle to min(1.0, requiredDeltaVLock:mag / 20).
 lock throttle to minThrottle + (baseThrottle - minThrottle) * (1 - errorPenalty).
 
 
-until requiredDeltaVLock:mag < 5 {
+until requiredDeltaVLock:mag < 10 {
     local boostback is optimizeBoostbackState(profile, landingSite:position - body:position).
+    print "boostback deltav" + boostback:requiredDeltaV:mag at (0, 7).
     set requiredVelocity to boostback:requiredVelocity.
 
     if throttle > 0 {
@@ -47,5 +52,7 @@ until requiredDeltaVLock:mag < 5 {
     wait 0.
 }
 
+steeringmanager:resettodefault().
 unlock throttle.
 unlock steering.
+}

@@ -1,7 +1,8 @@
 runoncepath(scriptpath():parent + "/interpolateTable").
+runoncepath(scriptpath():parent + "/name").
 
 function loadboosterprofile {
-    parameter profilePath is "0:/bosterprofiles/test.json".
+    parameter profilePath is boosterProfileName().
 
     local profile is readjson(profilePath).
 

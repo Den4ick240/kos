@@ -1,4 +1,5 @@
 runoncepath(scriptpath():parent + "/integrateLanding").
+runoncepath(scriptpath():parent + "/getHitError").
 
 parameter compensationGain to 0.5. // how much of each frame's downrange miss to integrate
 parameter offsetDamping to 0.98.     // leaky-integrator damping (0..1): how much of old offset to keep
@@ -76,11 +77,11 @@ function optimizeBoostbackState {
     ).
 
     local landing is integrateLanding(
-        profile,
         targetVector:mag - _body:radius,
         requiredVelocity,
         massAfterBurn,
-        selfVector
+        selfVector,
+        profile
     ).
     set timeOfFlight to landing:time.
     set predictedTargetVector to angleaxis(
@@ -107,7 +108,6 @@ function optimizeBoostbackState {
             + (downrangeDir * downrangeOffset) 
             + (crossrangeDir * crossrangeOffset).
 
-
     return lex(
         "flightPathAngle", flightPathAngle,
         "requiredVelocity", requiredVelocity,
@@ -126,7 +126,7 @@ function findBestAngle {
 
     function getRequiredDeltaVForFlightPathAngle {
         parameter flightPathAngle.
-        return getRequiredVelocityForFlightPathAngle(flightPathAngle, targetVector, currentVelocity, selfVector) - currentVelocity.
+        return getRequiredVelocityForFlightPathAngle(flightPathAngle, targetVector, v(10000, 0, 0), selfVector) - currentVelocity.
     }
 
     from { local i is 0. } until i = 8 step { set i to i + 1. } do {
