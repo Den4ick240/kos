@@ -6,6 +6,7 @@ runoncepath("0:/den4ick240kos/apdg.ks").
 function aerodescentGuidance {
 
 parameter landingSite.
+parameter profile is loadboosterprofile().
 
 lock throttle to 0.
 
@@ -28,9 +29,10 @@ when (ship:altitude < guidBurnAltitude) then {
 }
 
 until not isAerodescent {
-    local aa is guidanceUpdate().
+    local aa is guidanceUpdate(profile).
     set desiredDir to aa["a"].
     set hitTime to aa["b"].
+    print guidBurnAltitude at(0, 1).
     if ship:altitude < guidBurnAltitude {
         break.
     }

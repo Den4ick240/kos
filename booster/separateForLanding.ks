@@ -14,18 +14,18 @@ wait until ship:altitude > 2500.
 
 
 
-local boosterFuel is 0.
+local boosterFuel is list().
+local totalCapacity is 0.
 
 for p in SHIP:PARTS {
     if p:DECOUPLER = CORE:PART:DECOUPLER {
         for r in p:RESOURCES {
             if r:NAME = "LiquidFuel" {
-                set boosterFuel to r.
-                break.
+                boosterFuel:add(r).
+                set totalCapacity to totalCapacity + r:capacity.
             }
         }
     }
-    if boosterFuel <> 0 { break. }
 }
 
 wait 15.
@@ -36,7 +36,11 @@ wait 15.
 //    return boosterProfile:dryMass + (boosterProfile:wetMass - boosterProfile:dryMass) * fuelFraction.
 //}
 function getStageMass {
-    local fuelFraction is boosterFuel:amount / boosterFuel:capacity.
+    local amount is 0.
+    for f in boosterFuel {
+        set amount to amount + f:amount.
+    }
+    local fuelFraction is amount / totalCapacity.
 
     return boosterProfile:dryMass
         + (boosterProfile:wetMass - boosterProfile:dryMass) * fuelFraction.
@@ -98,7 +102,7 @@ when nextUpdateTime < time:seconds then {
         set warp to 0.
     }
 
-    if timeLeft < 10 {
+    if timeLeft < 8 {
         lock throttle to 0.
         stage.
         return false.

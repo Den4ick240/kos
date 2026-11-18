@@ -49,9 +49,13 @@ function guidanceInit {
 
 function guidanceUpdate {
     // 1. Integrate the trajectory to predict where we'd hit right now.
+    parameter profile is loadboosterprofile().
     local hitData is integrateLanding(
         guidSite:terrainheight,
-        ship:velocity:orbit
+        ship:velocity:orbit,
+        ship:mass,
+        ship:position - body:position,
+        profile
     ).
     local hitGeo is hitData["impactGeo"].
     set guidBurnAltitude to hitData["burnAltitude"].

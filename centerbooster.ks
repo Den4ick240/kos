@@ -11,7 +11,7 @@ for eng in ship:engines {
     }
 }
 
-if selectedEngines:lenght = ship:engines:length {
+if selectedEngines:length = ship:engines:length {
     return.
 }
 
